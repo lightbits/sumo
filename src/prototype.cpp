@@ -98,33 +98,31 @@ time_since(uint64 then)
     return get_elapsed_time(then, now);
 }
 
-#define GLSL(src) "#version 150 core\n" #src
-static char *SHADER_GUI_VS = GLSL(
-    in vec2 position;
-    in vec2 texel;
-    in vec4 color;
-    out vec2 vTexel;
-    out vec4 vColor;
-    uniform mat4 projection;
+static char *SHADER_GUI_VS =
+    "#version 150                                                    \n"
+    "in vec2 position;                                               \n"
+    "in vec2 texel;                                                  \n"
+    "in vec4 color;                                                  \n"
+    "out vec2 vTexel;                                                \n"
+    "out vec4 vColor;                                                \n"
+    "uniform mat4 projection;                                        \n"
+    "void main()                                                     \n"
+    "{                                                               \n"
+    "    vTexel = texel;                                             \n"
+    "    vColor = color;                                             \n"
+    "    gl_Position = projection * vec4(round(position), 0.0, 1.0); \n"
+    "}                                                               \n";
 
-    void main()
-    {
-        vTexel = texel;
-        vColor = color;
-        gl_Position = projection * vec4(round(position), 0.0, 1.0);
-    }
-);
-
-static char *SHADER_GUI_FS = GLSL(
-    in vec2 vTexel;
-    in vec4 vColor;
-    out vec4 outColor;
-    uniform sampler2D tex;
-    void main()
-    {
-        outColor = vColor * texture(tex, vTexel);
-    }
-);
+static char *SHADER_GUI_FS =
+    "#version 150                                  \n"
+    "in vec2 vTexel;                               \n"
+    "in vec4 vColor;                               \n"
+    "out vec4 outColor;                            \n"
+    "uniform sampler2D tex;                        \n"
+    "void main()                                   \n"
+    "{                                             \n"
+    "    outColor = vColor * texture(tex, vTexel); \n"
+    "}                                             \n";
 
 struct Gui
 {
@@ -307,6 +305,7 @@ int main(int argc, char **argv)
     glewExperimental = true;
     GLenum glew_status = glewInit();
     check(glew_status == GLEW_OK, "Failed to load OpenGL functions");
+    glGetError(); // Catch the stray error that sometimes occurs and ignore it
 
     GLuint vao;
     glGenVertexArrays(1, &vao);

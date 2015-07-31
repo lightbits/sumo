@@ -4,6 +4,7 @@
 #include "GL/glew.h"
 #include "SDL.h"
 #include "SDL_opengl.h"
+#include "SDL_assert.h"
 
 #include "imgui/imgui.h"
 
@@ -17,6 +18,8 @@
 #include "so_shader.h"
 
 #include "so_math.h"
+
+#define Assert SDL_assert
 
 void Clearc(float r, float g, float b, float a)
 {
@@ -41,9 +44,9 @@ GLuint MakeBuffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage)
 {
     GLuint result = 0;
     glGenBuffers(1, &result);
-    glBindBuffer(result, target);
+    glBindBuffer(target, result);
     glBufferData(target, size, data, usage);
-    glBindBuffer(result, 0);
+    glBindBuffer(target, 0);
     return result;
 }
 
