@@ -23,6 +23,9 @@ typedef int8_t      s08;
 #include "SDL_opengl.h"
 #include "SDL_assert.h"
 
+#define ASSERT SDL_assert
+#define persist static
+
 #include "imgui/imgui.h"
 #include "sorted_array.h"
 
@@ -37,28 +40,27 @@ typedef int8_t      s08;
 
 #include "so_math.h"
 
-#define Assert SDL_assert
 
-void Clearc(float r, float g, float b, float a)
+void clearc(float r, float g, float b, float a)
 {
     glClearColor(r, g, b, a);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void Cleard(float depth)
+void cleard(float depth)
 {
     glClearDepth(depth);
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void Clear(float r, float g, float b, float a, float depth)
+void clear(float r, float g, float b, float a, float depth)
 {
     glClearColor(r, g, b, a);
     glClearDepth(depth);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-GLuint MakeBuffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage)
+GLuint make_buffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage)
 {
     GLuint result = 0;
     glGenBuffers(1, &result);
@@ -67,7 +69,5 @@ GLuint MakeBuffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage)
     glBindBuffer(target, 0);
     return result;
 }
-
-// Various practical functions and helpers
 
 #endif

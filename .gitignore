@@ -1,0 +1,8 @@
+*.dll
+*.exe
+*.pdb
+*.suo
+*.v12
+imgui.ini
+*.obj
+*.manifest

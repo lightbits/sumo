@@ -11,10 +11,10 @@ void init()
 
 void tick(float t, float dt)
 {
-    Clearc(0.35f, 0.55f, 1.0f, 1.0f);
+    clearc(0.35f, 0.55f, 1.0f, 1.0f);
     ImGui::NewFrame();
-    static float lightColor[4];
-    static float attenuation;
+    persist float lightColor[4];
+    persist float attenuation;
     ImGui::Begin("Diffuse Shader");
     ImGui::ColorEdit4("lightColor", lightColor);
     ImGui::SliderFloat("attenuation", &attenuation, 1.0f, 16.0f);

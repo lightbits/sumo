@@ -128,11 +128,6 @@ attribv(char *name,
         u32 offset,
         bool normalized = false)
 {
-    // TODO: This is a bug (and applies for all above calls to uniform)
-    // The pointer to name goes stale, since it is a local parameter.
-    // But we insert the pointer itself in the sorted array. Instead
-    // we should copy the string, and be able to store strings of
-    // varied lengths somehow... Oh boy.
     GLint location = get_attrib_location(_active_render_pass, name);
     glEnableVertexAttribArray(location);
     glVertexAttribPointer(location,
@@ -194,11 +189,10 @@ render_pass_t make_render_pass(render_pass_source_t source, bool from_memory)
 }
 
 render_pass_t pass1;
+GLuint vbo;
 
 void init()
 {
-    // char *keys[16];
-    // float data[16];
     sorted_r32_array_t a = {};
     sorted_array_alloc(&a, 16);
     sorted_array_set(&a, "acb", 4.4f);
@@ -220,22 +214,26 @@ void init()
     };
 
     pass1 = make_render_pass(pass1_src, false);
+
+    float v[] = {
+        -1.0f, -1.0f,
+        +1.0f, -1.0f,
+        +1.0f, +1.0f,
+        +1.0f, +1.0f,
+        -1.0f, +1.0f,
+        -1.0f, -1.0f
+    };
+    vbo = make_buffer(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
 }
 
 void tick(float t, float dt)
 {
+    clearc(0.35f, 0.55f, 1.0f, 1.0f);
     begin(&pass1);
+    uniform("blue_color", sin(t));
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     attribv("position", GL_FLOAT, 2, 2 * sizeof(GLfloat), 0);
-
-    Clearc(0.35f, 0.55f, 1.0f, 1.0f);
-    ImGui::NewFrame();
-    static float lightColor[4];
-    static float attenuation;
-    ImGui::Begin("Diffuse Shader");
-    ImGui::ColorEdit4("lightColor", lightColor);
-    ImGui::SliderFloat("attenuation", &attenuation, 1.0f, 16.0f);
-    ImGui::End();
-    ImGui::Render();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 #include "prototype.cpp"
