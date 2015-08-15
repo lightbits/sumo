@@ -4,3 +4,9 @@ Graphical and Numerical Prototyping Kit
 * LUA scripting, hotload code?
 * Or just C?
 * OpenGL
+
+
+Todo
+====
+* stb_truetype
+* hash map and/or sorted array

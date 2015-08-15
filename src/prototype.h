@@ -1,12 +1,30 @@
 #ifndef _prototype_h_
 #define _prototype_h_
 
+#include <stdint.h>
+typedef uint32_t    uint;
+typedef uint64_t    uint64;
+typedef uint32_t    uint32;
+typedef uint16_t    uint16;
+typedef uint8_t     uint8;
+typedef int32_t     int32;
+typedef int16_t     int16;
+typedef int8_t      int8;
+typedef uint64_t    u64;
+typedef uint32_t    u32;
+typedef uint16_t    u16;
+typedef uint8_t     u08;
+typedef int32_t     s32;
+typedef int16_t     s16;
+typedef int8_t      s08;
+
 #include "GL/glew.h"
 #include "SDL.h"
 #include "SDL_opengl.h"
 #include "SDL_assert.h"
 
 #include "imgui/imgui.h"
+#include "sorted_array.h"
 
 #define SO_FBO_IMPLEMENTATION
 #include "so_fbo.h"

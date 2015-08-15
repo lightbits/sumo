@@ -2,6 +2,7 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
+#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
 void init()
 {
@@ -10,7 +11,7 @@ void init()
 
 void tick(float t, float dt)
 {
-    Clearc(1.0f, 0.95f, 0.8f, 1.0f);
+    Clearc(0.35f, 0.55f, 1.0f, 1.0f);
     ImGui::NewFrame();
     static float lightColor[4];
     static float attenuation;
