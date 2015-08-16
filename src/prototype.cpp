@@ -69,24 +69,22 @@ at the end of your prototyping app.
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
 #include "sorted_array.cpp"
+#include "render_pass.cpp"
 
-uint64
-get_tick()
+u64 get_tick()
 {
     return SDL_GetPerformanceCounter();
 }
 
-float
-get_elapsed_time(uint64 begin, uint64 end)
+float get_elapsed_time(u64 begin, u64 end)
 {
-    uint64 frequency = SDL_GetPerformanceFrequency();
+    u64 frequency = SDL_GetPerformanceFrequency();
     return (float)(end - begin) / (float)frequency;
 }
 
-float
-time_since(uint64 then)
+float time_since(u64 then)
 {
-    uint64 now = get_tick();
+    u64 now = get_tick();
     return get_elapsed_time(then, now);
 }
 
@@ -127,8 +125,8 @@ int main(int argc, char **argv)
     gui_init(WINDOW_WIDTH, WINDOW_HEIGHT);
     init();
 
-    uint64 initial_tick = get_tick();
-    uint64 last_frame_t = initial_tick;
+    u64 initial_tick = get_tick();
+    u64 last_frame_t = initial_tick;
     int running = 1;
     while (running)
     {

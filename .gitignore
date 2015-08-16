@@ -6,3 +6,5 @@
 imgui.ini
 *.obj
 *.manifest
+*.sublime-project
+*.sublime-workspace

@@ -40,35 +40,7 @@ bool binary_search(char **keys, int n, char *key, int *result)
     return cmp == 0;
 }
 
-#if 0
-void sorted_array_set_(sorted_array_base_t *s, char *key,
-                       u08 *data, u08 *value, u32 size)
-{
-    assert(s->count < Sorted_Array_Size);
-    int insert_at;
-    if (binary_search(s->keys, s->count, key, &insert_at))
-        return; // Item already exists
-    for (int i = s->count + 1; i > insert_at; i--)
-    {
-        s->keys[i] = s->keys[i - 1];
-        memcpy(data + i * size, data + (i - 1) * size, size);
-    }
-    s->keys[insert_at] = key;
-    s->count++;
-    memcpy(data + insert_at * size, value, size);
-}
-
-void *sorted_array_get_(sorted_array_base_t *s, u08 *data, char *key, u32 size)
-{
-    int i;
-    bool exists = binary_search(s->keys, s->count, key, &i);
-    if (exists)
-        return data + size * i;
-    else
-        return 0;
-}
-#else
-void sorted_array_alloc_(sorted_array_base_t *base,
+void sorted_array_alloc_(SortedArrayBase *base,
                          u32 count, u32 element_size)
 {
     base->keys = (char**)malloc(count);
@@ -77,7 +49,7 @@ void sorted_array_alloc_(sorted_array_base_t *base,
     base->used = 0;
 }
 
-void free_sorted_array_(sorted_array_base_t *base)
+void free_sorted_array_(SortedArrayBase *base)
 {
     for (u32 i = 0; i < base->used; i++)
         free(base->keys[i]);
@@ -87,7 +59,7 @@ void free_sorted_array_(sorted_array_base_t *base)
     base->used = 0;
 }
 
-void sorted_array_set_(sorted_array_base_t *s, char *key, u08 *value, u32 size)
+void sorted_array_set_(SortedArrayBase *s, char *key, u08 *value, u32 size)
 {
     assert(s->used < s->size);
     int insert_at;
@@ -106,7 +78,7 @@ void sorted_array_set_(sorted_array_base_t *s, char *key, u08 *value, u32 size)
     memcpy(s->data + insert_at * size, value, size);
 }
 
-void *sorted_array_get_(sorted_array_base_t *s, char *key, u32 size)
+void *sorted_array_get_(SortedArrayBase *s, char *key, u32 size)
 {
     int i;
     bool exists = binary_search(s->keys, s->used, key, &i);
@@ -115,4 +87,3 @@ void *sorted_array_get_(sorted_array_base_t *s, char *key, u32 size)
     else
         return 0;
 }
-#endif

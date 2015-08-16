@@ -37,7 +37,7 @@ typedef int8_t      s08;
 #if 0
 #define Sorted_Array_Size 512
 
-struct sorted_array_base_t
+struct SortedArrayBase
 {
     char *keys[Sorted_Array_Size];
     int count;
@@ -45,7 +45,7 @@ struct sorted_array_base_t
 
 #define sorted_array(T)                   \
     struct {                              \
-        sorted_array_base_t base;         \
+        SortedArrayBase base;         \
         T data[Sorted_Array_Size];        \
         T tmp;                            \
     }
@@ -65,19 +65,19 @@ struct sorted_array_base_t
                           key, sizeof(T)) \
 
 void*
-sorted_array_get_(sorted_array_base_t *s,
+sorted_array_get_(SortedArrayBase *s,
                   u08 *data,
                   char *key,
                   u32 size);
 
 void
-sorted_array_set_(sorted_array_base_t *s,
+sorted_array_set_(SortedArrayBase *s,
                   char *key,
                   u08 *data,
                   u08 *value,
                   u32 size);
 #else
-struct sorted_array_base_t
+struct SortedArrayBase
 {
     char **keys;
     u08  *data;
@@ -93,8 +93,8 @@ struct sorted_array_base_t
 #define free_sorted_array(s) \
     free_sorted_array_(&(s)->base);
 
-#define sorted_array_t(T) \
-    struct { sorted_array_base_t base; T tmp; }
+#define SortedArray(T) \
+    struct { SortedArrayBase base; T tmp; }
 
 #define sorted_array_set(s, key, value)  \
     (s)->tmp = (value);                  \
@@ -106,27 +106,27 @@ struct sorted_array_base_t
     (type*)sorted_array_get_(&(s)->base, (key), \
                              sizeof(type));
 
-void *sorted_array_get_(sorted_array_base_t *s,
+void *sorted_array_get_(SortedArrayBase *s,
                         char *key, u32 size);
 
-void sorted_array_set_(sorted_array_base_t *s,
+void sorted_array_set_(SortedArrayBase *s,
                        char *key, u08 *value,
                        u32 size);
 
-void sorted_array_alloc_(sorted_array_base_t *base,
+void sorted_array_alloc_(SortedArrayBase *base,
                          u32 count, u32 element_size);
 
-void free_sorted_array_(sorted_array_base_t *base);
+void free_sorted_array_(SortedArrayBase *base);
 
 #define sorted_array_len(s) (s)->base.used
 
 #endif
-typedef sorted_array_t(r32) sorted_r32_array_t;
-typedef sorted_array_t(u32) sorted_u32_array_t;
-typedef sorted_array_t(u16) sorted_u16_array_t;
-typedef sorted_array_t(u08) sorted_u08_array_t;
-typedef sorted_array_t(s32) sorted_s32_array_t;
-typedef sorted_array_t(s16) sorted_s16_array_t;
-typedef sorted_array_t(s08) sorted_s08_array_t;
+typedef SortedArray(r32) SortedArray_r32;
+typedef SortedArray(u32) SortedArray_u32;
+typedef SortedArray(u16) SortedArray_u16;
+typedef SortedArray(u08) SortedArray_u08;
+typedef SortedArray(s32) SortedArray_s32;
+typedef SortedArray(s16) SortedArray_s16;
+typedef SortedArray(s08) SortedArray_s08;
 
 #endif

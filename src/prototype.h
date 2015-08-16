@@ -1,15 +1,10 @@
 #ifndef _prototype_h_
 #define _prototype_h_
 
+#define persist static
+
 #include <stdint.h>
-typedef uint32_t    uint;
-typedef uint64_t    uint64;
-typedef uint32_t    uint32;
-typedef uint16_t    uint16;
-typedef uint8_t     uint8;
-typedef int32_t     int32;
-typedef int16_t     int16;
-typedef int8_t      int8;
+typedef float       r32;
 typedef uint64_t    u64;
 typedef uint32_t    u32;
 typedef uint16_t    u16;
@@ -18,16 +13,14 @@ typedef int32_t     s32;
 typedef int16_t     s16;
 typedef int8_t      s08;
 
+#define SDL_ASSERT_LEVEL 2
+
 #include "GL/glew.h"
 #include "SDL.h"
 #include "SDL_opengl.h"
-#include "SDL_assert.h"
 
 #define ASSERT SDL_assert
-#define persist static
-
-#include "imgui/imgui.h"
-#include "sorted_array.h"
+#include "SDL_assert.h"
 
 #define SO_FBO_IMPLEMENTATION
 #include "so_fbo.h"
@@ -40,6 +33,9 @@ typedef int8_t      s08;
 
 #include "so_math.h"
 
+#include "imgui/imgui.h"
+#include "sorted_array.h"
+#include "render_pass.h"
 
 void clearc(float r, float g, float b, float a)
 {
