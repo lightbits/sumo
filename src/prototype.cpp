@@ -66,6 +66,7 @@ at the end of your prototyping app.
 #define WINDOW_DOUBLE_BUFFER 1
 #endif
 
+#include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
 #include "sorted_array.cpp"
@@ -112,10 +113,7 @@ int main(int argc, char **argv)
 
     SDL_GL_SetSwapInterval(1); // Wait for vertical refresh
 
-    glewExperimental = true;
-    GLenum glew_status = glewInit();
-    check(glew_status == GLEW_OK, "Failed to load OpenGL functions");
-    glGetError(); // Catch the stray error that sometimes occurs and ignore it
+    check(ogl_LoadFunctions() != ogl_LOAD_FAILED, "Failed to load OpenGL functions");
 
     GLuint vao;
     glGenVertexArrays(1, &vao);

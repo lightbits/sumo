@@ -46,7 +46,7 @@ void tick(float t, float dt)
 {
     clearc(0.35f, 0.55f, 1.0f, 1.0f);
     begin(&pass1);
-    uniform("blue_color", sin(t));
+    uniformf("blue_color", sin(t));
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     attribv("position", GL_FLOAT, 2, 2 * sizeof(GLfloat), 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);

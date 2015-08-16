@@ -1,4 +1,4 @@
-#version 400
+#version 150
 
 in vec3 v_world;
 in vec2 v_texel;

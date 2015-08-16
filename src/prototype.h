@@ -15,9 +15,8 @@ typedef int8_t      s08;
 
 #define SDL_ASSERT_LEVEL 2
 
-#include "GL/glew.h"
+#include "opengl/gl_core_4_3.h"
 #include "SDL.h"
-#include "SDL_opengl.h"
 
 #define ASSERT SDL_assert
 #include "SDL_assert.h"
