@@ -12,7 +12,7 @@ Alex Evans - Dreams
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
-const u32 N = 1;
+const u32 N = 4;
 float sdf[(N+1)*(N+1)*(N+1)];
 GLuint splat;
 RenderPass pass1;
@@ -62,18 +62,22 @@ void init()
 void tick(float t, float dt)
 {
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.2f, 10.0f);
-    mat4 view = mat_translate(0.0f, 0.0f, -4.0f) * mat_rotate_y(t);
+    mat4 view = mat_translate(0.0f, 0.0f, -4.0f) *
+                mat_rotate_x(t);
 
     begin(&pass1);
-    clearc(0.35f, 0.55f, 1.0f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glDepthRangef(0.0f, 1.0f);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LEQUAL);
+    clear(0.35f, 0.55f, 1.0f, 1.0f, 1.0f);
     glBindBuffer(GL_ARRAY_BUFFER, splat);
-    // uniformi("N", N);
+    uniformi("N", N);
     uniformf("projection", projection);
     uniformf("view", view);
     attribfv("position", 3, 5, 0);
     attribfv("texel", 2, 5, 3);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    // glDrawArraysInstanced(GL_TRIANGLES, 0, 6, N*N*N);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, N*N*N);
 }
 
 #include "prototype.cpp"

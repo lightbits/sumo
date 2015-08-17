@@ -204,8 +204,8 @@ mat_rotate_x(float angle_in_radians)
     float s = sin(angle_in_radians);
     mat4 result = mat_identity();
     result.y.y = c;
-    result.y.z = -s;
-    result.z.x = s;
+    result.y.z = s;
+    result.z.y = -s;
     result.z.z = c;
     return result;
 }
