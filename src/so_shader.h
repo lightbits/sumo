@@ -43,14 +43,6 @@ Load a shader programme
     };
     GLuint program = so_load_shader(paths, types, 4);
     if (!program) // Failed to load (details have been printf'd)
-
-Set uniforms
-    so_use_shader(shader0);
-    so_uniform(projection, mat_projection);
-    so_uniform(view, mat_view);
-    so_uniform(model, mat_model);
-    so_uniform(albedo, 1.0f, 0.5f, 0.2f);
-    so_uniform(screen, vec2(width, height));
 */
 #ifndef SO_SHADER_HEADER_INCLUDE
 #define SO_SHADER_HEADER_INCLUDE

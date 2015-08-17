@@ -66,6 +66,13 @@ at the end of your prototyping app.
 #define WINDOW_DOUBLE_BUFFER 1
 #endif
 
+#ifndef FPS_LOCK
+#define FPS_LOCK 60
+#endif
+
+#define FRAME_TIME (1.0 / FPS_LOCK)
+#define SLEEP_GRANULARITY (0.01)
+
 #include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
@@ -87,6 +94,19 @@ float time_since(u64 then)
 {
     u64 now = get_tick();
     return get_elapsed_time(then, now);
+}
+
+void take_screenshot(SDL_Window *window)
+{
+    static u08 pixels[WINDOW_WIDTH*WINDOW_HEIGHT*3];
+    glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
+                 GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+    // Write result flipped vertically, beginning on the last row
+    // and moving backwards.
+    u08 *end = pixels + WINDOW_WIDTH*WINDOW_HEIGHT*3 - WINDOW_WIDTH*3;
+    stbi_write_png("screenshot.png", WINDOW_WIDTH,
+                   WINDOW_HEIGHT, 3, end, -WINDOW_WIDTH * 3);
 }
 
 int main(int argc, char **argv)
@@ -125,6 +145,8 @@ int main(int argc, char **argv)
 
     u64 initial_tick = get_tick();
     u64 last_frame_t = initial_tick;
+    float elapsed_time = 0.0f;
+    float delta_time = FRAME_TIME;
     int running = 1;
     while (running)
     {
@@ -137,9 +159,10 @@ int main(int argc, char **argv)
                 case SDL_KEYUP:
                     if (event.key.keysym.sym == SDLK_ESCAPE)
                         running = 0;
-                    // RELOAD SHADERS
-                    // if (event.key.keysym.sym == SDLK_PRINTSCREEN)
-                    //     screenshot();
+                    if (event.key.keysym.sym == SDLK_r)
+                        init();
+                    if (event.key.keysym.sym == SDLK_PRINTSCREEN)
+                        take_screenshot(window);
                     break;
                 case SDL_QUIT:
                     running = 0;
@@ -147,16 +170,20 @@ int main(int argc, char **argv)
             }
         }
 
-        float elapsed_time = time_since(initial_tick);
-        float delta_time = time_since(last_frame_t);
-        last_frame_t = get_tick();
-
         tick(elapsed_time, delta_time);
         gui_tick(delta_time);
         SDL_GL_SwapWindow(window);
 
         GLenum e = glGetError();
         check(e == GL_NO_ERROR, "OpenGL failed");
+
+        elapsed_time = time_since(initial_tick);
+        delta_time = time_since(last_frame_t);
+
+        float sleep_time = FRAME_TIME - delta_time;
+        if (sleep_time >= 0.0f && sleep_time >= SLEEP_GRANULARITY)
+            SDL_Delay((u32)(sleep_time * 1000.0f));
+        last_frame_t = get_tick();
     }
 
     SDL_GL_DeleteContext(context);

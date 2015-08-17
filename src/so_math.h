@@ -4,6 +4,7 @@ Changelog
 =========
 15. july 2015
     Added perspective matrix projection
+    Fixed some math bugs
 
 22. july 2015
     Added orthographic matrix projection.

@@ -30,6 +30,9 @@ typedef int8_t      s08;
 #define SO_SHADER_IMPLEMENTATION
 #include "so_shader.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include "so_math.h"
 
 #include "imgui/imgui.h"
