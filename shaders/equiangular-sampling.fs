@@ -1,7 +1,7 @@
 #version 150
 
 #define Epsilon 0.01
-#define Steps 32
+#define Steps 64
 #define ClipFar 4.0
 
 in vec2 v_position;

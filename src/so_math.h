@@ -1,8 +1,12 @@
-/* so_math - v0.02
+/* so_math - v0.04
 
 Changelog
 =========
-15. july 2015
+21. august 2015
+    scale
+    lerpf
+
+15. august 2015
     Added perspective matrix projection
     Fixed some math bugs
 
@@ -199,6 +203,17 @@ mat_identity()
 }
 
 mat4
+mat_scale(float s)
+{
+    mat4 result = {};
+    result.x.x = s;
+    result.y.y = s;
+    result.z.z = s;
+    result.w.w = 1;
+    return result;
+}
+
+mat4
 mat_rotate_x(float angle_in_radians)
 {
     float c = cos(angle_in_radians);
@@ -283,6 +298,11 @@ mat_perspective(float fov, float width, float height, float zn, float zf)
 }
 
 ///////////// the works
+
+float lerpf(float min, float max, float t)
+{
+    return min + (max - min) * t;
+}
 
 float
 dot(vec2 a, vec2 b)
