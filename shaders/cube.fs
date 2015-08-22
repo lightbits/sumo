@@ -11,6 +11,10 @@ vec3 diffuse(vec3 c, vec3 l, vec3 n)
 
 void main()
 {
+    float h = 0.25;
+    if (mod(v_world.x, h) < 0.12*h)
+        discard;
+
     vec3 n = normalize(v_normal);
     vec3 color = vec3(0.0);
 

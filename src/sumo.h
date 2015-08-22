@@ -36,8 +36,8 @@ typedef int8_t      s08;
 #include "so_math.h"
 
 #include "imgui/imgui.h"
-#include "sorted_array.h"
-#include "render_pass.h"
+#include "map.h"
+#include "pass.h"
 
 void clearc(float r, float g, float b, float a)
 {

@@ -1,4 +1,4 @@
-#include "prototype.h"
+#include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
@@ -9,17 +9,17 @@ GLuint vbo;
 
 void init()
 {
-    SortedArray_r32 a = {};
-    sorted_array_alloc(&a, 16);
-    sorted_array_set(&a, "acb", 4.4f);
-    sorted_array_set(&a, "ab", 3.3f);
-    sorted_array_set(&a, "aa", 2.2f);
-    sorted_array_set(&a, "a", 1.1f);
+    Map_r32 a = {};
+    map_alloc(&a, 16);
+    map_set(&a, "acb", 4.4f);
+    map_set(&a, "ab", 3.3f);
+    map_set(&a, "aa", 2.2f);
+    map_set(&a, "a", 1.1f);
 
-    for (int i = 0; i < sorted_array_len(&a); i++)
+    for (int i = 0; i < map_len(&a); i++)
     {
         char *key = a.base.keys[i];
-        float *x = sorted_array_get(&a, key, float);
+        float *x = map_get(&a, key, float);
         if (x)
             printf("%d : %s = %f\n", i, key, *x);
     }
@@ -52,4 +52,4 @@ void tick(float t, float dt)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-#include "prototype.cpp"
+#include "sumo.cpp"

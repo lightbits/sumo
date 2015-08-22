@@ -1,6 +1,7 @@
-#include "prototype.h"
+#include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
+#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define MULTISAMPLES 4
 
 RenderPass pass;
@@ -36,4 +37,4 @@ void tick(float t, float dt)
     glDrawElements(GL_TRIANGLES, cube.index_count, cube.index_type, 0);
 }
 
-#include "prototype.cpp"
+#include "sumo.cpp"

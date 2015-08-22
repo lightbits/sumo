@@ -1,4 +1,4 @@
-#include "prototype.h"
+#include "sumo.h"
 #define WINDOW_WIDTH 600
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
@@ -191,7 +191,7 @@ void tick(float t, float dt)
 {
     clearc(0.01f, 0.21f, 0.29f, 1.0f);
     lines_next_color();
-    lines_set_width(16.0f);
+    lines_set_width(1.0f);
     lines_draw_line(0.0f, 0.0f, 1.0f, 1.0f);
     lines_next_color();
     lines_next_color();
@@ -199,4 +199,4 @@ void tick(float t, float dt)
     lines_flush();
 }
 
-#include "prototype.cpp"
+#include "sumo.cpp"

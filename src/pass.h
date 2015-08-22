@@ -1,7 +1,7 @@
-#ifndef _render_pass_h_
-#define _render_pass_h_
+#ifndef _pass_h_
+#define _pass_h_
 
-typedef SortedArray(GLint) SortedArray_GLint;
+typedef Map(GLint) Map_GLint;
 struct RenderPass
 {
     GLuint shader;
@@ -9,8 +9,8 @@ struct RenderPass
     // GLuint textures[...];
     // GLenum texture_types[...]
 
-    SortedArray_GLint uniforms;
-    SortedArray_GLint attribs;
+    Map_GLint uniforms;
+    Map_GLint attribs;
 };
 
 struct RenderPassSource

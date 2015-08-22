@@ -1,4 +1,4 @@
-#include "sorted_array.h"
+#include "map.h"
 
 // returns true and the index of the matching element
 // or false and the insertion index of "key" to preserve
@@ -40,8 +40,7 @@ bool binary_search(char **keys, int n, char *key, int *result)
     return cmp == 0;
 }
 
-void sorted_array_alloc_(SortedArrayBase *base,
-                         u32 count, u32 element_size)
+void map_alloc_(MapBase *base, u32 count, u32 element_size)
 {
     base->keys = (char**)malloc(count);
     base->data = (u08*)malloc(count * element_size);
@@ -49,7 +48,7 @@ void sorted_array_alloc_(SortedArrayBase *base,
     base->used = 0;
 }
 
-void free_sorted_array_(SortedArrayBase *base)
+void map_free_(MapBase *base)
 {
     for (u32 i = 0; i < base->used; i++)
         free(base->keys[i]);
@@ -59,7 +58,7 @@ void free_sorted_array_(SortedArrayBase *base)
     base->used = 0;
 }
 
-void sorted_array_set_(SortedArrayBase *s, char *key, u08 *value, u32 size)
+void map_set_(MapBase *s, char *key, u08 *value, u32 size)
 {
     assert(s->used < s->size);
     int insert_at;
@@ -78,7 +77,7 @@ void sorted_array_set_(SortedArrayBase *s, char *key, u08 *value, u32 size)
     memcpy(s->data + insert_at * size, value, size);
 }
 
-void *sorted_array_get_(SortedArrayBase *s, char *key, u32 size)
+void *map_get_(MapBase *s, char *key, u32 size)
 {
     int i;
     bool exists = binary_search(s->keys, s->used, key, &i);

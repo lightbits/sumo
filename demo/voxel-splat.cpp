@@ -6,7 +6,7 @@ http://www.iquilezles.org/www/articles/volumesort/volumesort.htm
 Alex Evans - Dreams
 */
 
-#include "prototype.h"
+#include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
@@ -107,4 +107,4 @@ void tick(float t, float dt)
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, N*N*N);
 }
 
-#include "prototype.cpp"
+#include "sumo.cpp"

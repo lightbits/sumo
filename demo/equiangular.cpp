@@ -1,5 +1,5 @@
 /* https://www.solidangle.com/research/egsr2012_volume.pdf */
-#include "prototype.h"
+#include "sumo.h"
 #define WINDOW_WIDTH 512
 #define WINDOW_HEIGHT 512
 #define MULTISAMPLES 0
@@ -51,4 +51,4 @@ void tick(float t, float dt)
     ImGui::Render();
 }
 
-#include "prototype.cpp"
+#include "sumo.cpp"

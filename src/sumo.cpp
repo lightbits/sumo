@@ -19,7 +19,7 @@ To override default values, define
 
 Then include this cpp file, like so
 
-    #include "prototype.cpp"
+    #include "sumo.cpp"
 
 at the end of your prototyping app.
 
@@ -35,7 +35,7 @@ at the end of your prototyping app.
 #endif
 
 #ifndef WINDOW_TITLE
-#define WINDOW_TITLE "Prototype"
+#define WINDOW_TITLE "Sumo"
 #endif
 
 #ifndef WINDOW_FLAGS
@@ -76,8 +76,8 @@ at the end of your prototyping app.
 #include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
-#include "sorted_array.cpp"
-#include "render_pass.cpp"
+#include "map.cpp"
+#include "pass.cpp"
 
 u64 get_tick()
 {

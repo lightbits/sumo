@@ -15,11 +15,11 @@ void begin(RenderPass *pass)
 GLint get_attrib_location(RenderPass *pass, char *name)
 {
     GLint result = -1;
-    GLint *locationp = sorted_array_get(&pass->attribs, name, GLint);
+    GLint *locationp = map_get(&pass->attribs, name, GLint);
     if (!locationp)
     {
         result = glGetAttribLocation(pass->shader, name);
-        sorted_array_set(&pass->attribs, name, result);
+        map_set(&pass->attribs, name, result);
     }
     else
     {
@@ -34,11 +34,11 @@ GLint get_attrib_location(RenderPass *pass, char *name)
 GLint get_uniform_location(RenderPass *pass, char *name)
 {
     GLint result = -1;
-    GLint *locationp = sorted_array_get(&pass->uniforms, name, GLint);
+    GLint *locationp = map_get(&pass->uniforms, name, GLint);
     if (!locationp)
     {
         result = glGetUniformLocation(pass->shader, name);
-        sorted_array_set(&pass->uniforms, name, result);
+        map_set(&pass->uniforms, name, result);
     }
     else
     {
@@ -179,7 +179,7 @@ RenderPass make_render_pass(RenderPassSource source)
     else
         result.shader = so_load_shader(sources, types, count);
 
-    sorted_array_alloc(&result.uniforms, 128);
-    sorted_array_alloc(&result.attribs, 128);
+    map_alloc(&result.uniforms, 128);
+    map_alloc(&result.attribs, 128);
     return result;
 }

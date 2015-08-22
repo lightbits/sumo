@@ -1,4 +1,4 @@
-#include "prototype.h"
+#include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 0
@@ -136,4 +136,4 @@ void tick(float t, float dt)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-#include "prototype.cpp"
+#include "sumo.cpp"
