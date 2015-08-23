@@ -187,7 +187,7 @@ void init()
     lines_init();
 }
 
-void tick(float t, float dt)
+void tick(Input io, float t, float dt)
 {
     clearc(0.01f, 0.21f, 0.29f, 1.0f);
     lines_next_color();

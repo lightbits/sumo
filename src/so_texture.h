@@ -1,11 +1,15 @@
-/* so_texture - v0.03
+/* so_texture - v0.04
 Simplified OpenGL texture loading
 
 Changelog
 =========
+22. august 2015
+    Added ability to specify data type and format when loading 2d texture.
+    Better error handling.
+
 22. july 2015
-    Made so_make_tex2d public
-    Added so_load_png_from_memory
+    Made so_make_tex2d public.
+    Added so_load_png_from_memory.
 
 How to compile
 =======================================================================
@@ -17,8 +21,6 @@ To create the implementation in one source file include this header:
 
 Make sure that OpenGL symbols are defined before inclusion of the
 header.
-
-#define SOI_ASSERT if you do not want to #include "assert.h".
 */
 #ifndef SO_TEXTURE_HEADER_INCLUDE
 #define SO_TEXTURE_HEADER_INCLUDE
@@ -30,10 +32,13 @@ so_load_tex2d(char *path,
               GLenum min_filter = GL_LINEAR,
               GLenum mag_filter = GL_LINEAR,
               GLenum wrap_s = GL_CLAMP_TO_EDGE,
-              GLenum wrap_t = GL_CLAMP_TO_EDGE);
+              GLenum wrap_t = GL_CLAMP_TO_EDGE,
+              GLenum internal_format = GL_RGBA,
+              GLenum data_type = GL_UNSIGNED_BYTE,
+              GLenum data_format = GL_RGBA);
 
 extern GLuint
-so_make_tex2d(unsigned char *data,
+so_make_tex2d(void *data,
               int width, int height,
               GLenum internal_format,
               GLenum data_format,
@@ -56,8 +61,24 @@ so_load_png_from_memory(const void *png_data,
 #include "stb_image.h"
 #define SO_FORCE_LOAD_CHANNELS 4
 
+const char *soi_gl_error_message(GLenum error)
+{
+    switch (error)
+    {
+    case 0:      return "No error";
+    case 0x0500: return "Invalid enum";
+    case 0x0501: return "Invalid value";
+    case 0x0502: return "Invalid operation";
+    case 0x0503: return "Stack overflow";
+    case 0x0504: return "Stack underflow";
+    case 0x0505: return "Out of memory";
+    case 0x0506: return "Invalid framebuffer operation";
+    default:     return "Unknown";
+    }
+}
+
 GLuint
-so_make_tex2d(unsigned char *data,
+so_make_tex2d(void *data,
               int width, int height,
               GLenum internal_format,
               GLenum data_format,
@@ -78,7 +99,12 @@ so_make_tex2d(unsigned char *data,
     glBindTexture(GL_TEXTURE_2D, 0);
 
     GLenum error = glGetError();
-    SOI_ASSERT(error == GL_NO_ERROR);
+    if (error != GL_NO_ERROR)
+    {
+        const char *reason = soi_gl_error_message(error);
+        printf("Failed to make 2D texture: %s\n", reason);
+        result = 0;
+    }
     return result;
 }
 
@@ -89,20 +115,18 @@ so_load_tex2d(char *path,
               GLenum min_filter,
               GLenum mag_filter,
               GLenum wrap_s,
-              GLenum wrap_t)
+              GLenum wrap_t,
+              GLenum internal_format,
+              GLenum data_type,
+              GLenum data_format)
 {
     int width, height, channels;
     unsigned char *data = stbi_load(path, &width, &height, &channels, SO_FORCE_LOAD_CHANNELS);
-    SOI_ASSERT(data);
-
-    GLenum data_type = GL_UNSIGNED_BYTE;
-    GLenum data_format = GL_RGBA;
-
-    #ifdef SO_TEXTURE_USE_SRGB
-    GLenum internal_format = GL_SRGB8_ALPHA8;
-    #else
-    GLenum internal_format = GL_RGBA;
-    #endif
+    if (!data)
+    {
+        printf("Failed to load texture (%s): %s\n", path, stbi_failure_reason());
+        return 0;
+    }
 
     GLuint result = so_make_tex2d(data, width, height,
         internal_format, data_format, data_type,
@@ -124,7 +148,11 @@ so_load_png_from_memory(const void *png_data,
 {
     int width, height, channels;
     unsigned char *data = stbi_load_from_memory((const unsigned char*)png_data, png_size, &width, &height, &channels, SO_FORCE_LOAD_CHANNELS);
-    SOI_ASSERT(data);
+    if (!data)
+    {
+        printf("Failed to load png from memory: %s\n", stbi_failure_reason());
+        return 0;
+    }
 
     GLuint result = so_make_tex2d(data, width, height, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, min_filter, mag_filter, wrap_s, wrap_t);
     stbi_image_free(data);

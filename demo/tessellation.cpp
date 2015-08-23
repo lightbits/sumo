@@ -117,7 +117,7 @@ void init()
     mem.vbo = MakeBuffer(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
-void tick(float t, float dt)
+void tick(Input io, float t, float dt)
 {
     glClearColor(0.5f, 0.7f, 0.9f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);

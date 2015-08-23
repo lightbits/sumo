@@ -75,7 +75,7 @@ void init()
     splat = make_splat();
 }
 
-void tick(float t, float dt)
+void tick(Input io, float t, float dt)
 {
     mat4 projection = mat_perspective(PI / 4.0f,
                       WINDOW_WIDTH, WINDOW_HEIGHT,

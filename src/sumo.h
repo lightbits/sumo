@@ -34,10 +34,11 @@ typedef int8_t      s08;
 #include "stb_image_write.h"
 
 #include "so_math.h"
-
+#include "so_intrin.h"
 #include "imgui/imgui.h"
 #include "map.h"
 #include "pass.h"
+#include "cubemap.h"
 
 void clearc(float r, float g, float b, float a)
 {
@@ -108,6 +109,19 @@ struct Mesh
     GLenum index_type;
 };
 
+GLuint make_quad()
+{
+    GLfloat v[] = {
+        -1.0f, -1.0f,
+        +1.0f, -1.0f,
+        +1.0f, +1.0f,
+        +1.0f, +1.0f,
+        -1.0f, +1.0f,
+        -1.0f, -1.0f
+    };
+    return make_buffer(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
+}
+
 Mesh make_cube()
 {
     GLfloat v[] = {
@@ -164,5 +178,28 @@ Mesh make_cube()
     result.index_type = GL_UNSIGNED_INT;
     return result;
 }
+
+struct Input
+{
+    struct Key
+    {
+        bool down[SDL_NUM_SCANCODES];
+        bool released[SDL_NUM_SCANCODES];
+    } key;
+    struct Mouse
+    {
+        vec2 pos;
+        struct Button
+        {
+            bool down;
+            bool released;
+        } left, right, middle;
+        struct Wheel
+        {
+            r32 x; // The amount scrolled horizontally
+            r32 y; // The amount scrolled vertically
+        } wheel;
+    } mouse;
+};
 
 #endif

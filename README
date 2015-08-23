@@ -1,12 +1,8 @@
 Graphical and Numerical Prototyping Kit
 =======================================
 
-* LUA scripting, hotload code?
-* Or just C?
-* OpenGL
-
-
 Todo
 ====
 * stb_truetype
-* hash map and/or sorted array
+* #include in shader
+* Easy uniform manipulation using imgui and in-shader parameter declaration

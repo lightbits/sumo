@@ -28,7 +28,7 @@ void init()
     quad = make_quad();
 }
 
-void tick(float t, float dt)
+void tick(Input io, float t, float dt)
 {
     begin(&pass);
     clearc(0.0f, 0.0f, 0.0f, 1.0f);

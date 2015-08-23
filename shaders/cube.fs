@@ -11,8 +11,9 @@ vec3 diffuse(vec3 c, vec3 l, vec3 n)
 
 void main()
 {
-    float h = 0.25;
-    if (mod(v_world.x, h) < 0.12*h)
+    float h = 0.1;
+    // if (mod(v_world.x, h) < 0.12*h)
+    if (length(v_world - vec3(0.0, 0.0, 0.0)) < 0.6)
         discard;
 
     vec3 n = normalize(v_normal);

@@ -79,6 +79,35 @@ at the end of your prototyping app.
 #include "map.cpp"
 #include "pass.cpp"
 
+void panic(const char *msg)
+{
+    printf("An error occurred: %s\n", msg);
+    exit(1);
+}
+
+const char *gl_error_message(GLenum error)
+{
+    switch (error)
+    {
+    case 0: return "NO_ERROR";
+    case 0x0500: return "INVALID_ENUM";
+    case 0x0501: return "INVALID_VALUE";
+    case 0x0502: return "INVALID_OPERATION";
+    case 0x0503: return "STACK_OVERFLOW";
+    case 0x0504: return "STACK_UNDERFLOW";
+    case 0x0505: return "OUT_OF_MEMORY";
+    case 0x0506: return "INVALID_FRAMEBUFFER_OPERATION";
+    default: return "UNKNOWN";
+    }
+}
+
+void assert_gl()
+{
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+        panic(gl_error_message(error));
+}
+
 u64 get_tick()
 {
     return SDL_GetPerformanceCounter();
@@ -102,10 +131,21 @@ void take_screenshot(SDL_Window *window)
     glReadPixels(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,
                  GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
+    char filename[64] = {};
+    char *c = filename;
+    u32 len = strlen(WINDOW_TITLE);
+    for (u32 i = 0; i < min(len, 40); i++)
+    {
+        if (WINDOW_TITLE[i] == ' ') *c = '_';
+        else *c = tolower(WINDOW_TITLE[i]);
+        c++;
+    }
+    sprintf(c, "_%d.png", get_tick());
+
     // Write result flipped vertically, beginning on the last row
     // and moving backwards.
     u08 *end = pixels + WINDOW_WIDTH*WINDOW_HEIGHT*3 - WINDOW_WIDTH*3;
-    stbi_write_png("screenshot.png", WINDOW_WIDTH,
+    stbi_write_png(filename, WINDOW_WIDTH,
                    WINDOW_HEIGHT, 3, end, -WINDOW_WIDTH * 3);
 }
 
@@ -143,6 +183,8 @@ int main(int argc, char **argv)
     gui_init(WINDOW_WIDTH, WINDOW_HEIGHT);
     init();
 
+    Input input = {};
+
     u64 initial_tick = get_tick();
     u64 last_frame_t = initial_tick;
     float elapsed_time = 0.0f;
@@ -150,13 +192,24 @@ int main(int argc, char **argv)
     int running = 1;
     while (running)
     {
+        for (u32 i = 0; i < SDL_NUM_SCANCODES; i++)
+            input.key.released[i] = false;
+        input.mouse.left.released = false;
+        input.mouse.right.released = false;
+        input.mouse.middle.released = false;
+
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
             gui_poll(event);
             switch (event.type)
             {
+                case SDL_KEYDOWN:
+                    input.key.down[event.key.keysym.sym] = true;
+                    break;
                 case SDL_KEYUP:
+                    input.key.down[event.key.keysym.sym] = false;
+                    input.key.released[event.key.keysym.sym] = true;
                     if (event.key.keysym.sym == SDLK_ESCAPE)
                         running = 0;
                     if (event.key.keysym.sym == SDLK_r)
@@ -164,18 +217,50 @@ int main(int argc, char **argv)
                     if (event.key.keysym.sym == SDLK_PRINTSCREEN)
                         take_screenshot(window);
                     break;
+                case SDL_MOUSEMOTION:
+                    input.mouse.pos.x = event.motion.x;
+                    input.mouse.pos.y = event.motion.y;
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (SDL_BUTTON_LMASK & event.button.button)
+                        input.mouse.left.down = true;
+                    if (SDL_BUTTON_RMASK & event.button.button)
+                        input.mouse.right.down = true;
+                    if (SDL_BUTTON_MMASK & event.button.button)
+                        input.mouse.middle.down = true;
+                    break;
+                case SDL_MOUSEBUTTONUP:
+                    if (SDL_BUTTON_LMASK & event.button.button)
+                    {
+                        input.mouse.left.down = false;
+                        input.mouse.left.released = true;
+                    }
+                    if (SDL_BUTTON_RMASK & event.button.button)
+                    {
+                        input.mouse.right.down = false;
+                        input.mouse.right.released = true;
+                    }
+                    if (SDL_BUTTON_MMASK & event.button.button)
+                    {
+                        input.mouse.middle.down = false;
+                        input.mouse.middle.released = true;
+                    }
+                    break;
+                case SDL_MOUSEWHEEL:
+                    input.mouse.wheel.x = event.wheel.x;
+                    input.mouse.wheel.y = event.wheel.y;
+                    break;
                 case SDL_QUIT:
                     running = 0;
                     break;
             }
         }
 
-        tick(elapsed_time, delta_time);
+        tick(input, elapsed_time, delta_time);
         gui_tick(delta_time);
         SDL_GL_SwapWindow(window);
 
-        GLenum e = glGetError();
-        check(e == GL_NO_ERROR, "OpenGL failed");
+        assert_gl();
 
         elapsed_time = time_since(initial_tick);
         delta_time = time_since(last_frame_t);
