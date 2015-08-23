@@ -179,6 +179,7 @@ Mesh make_cube()
     return result;
 }
 
+// TODO: Make mouse pos/rel normalized to [0, 1]?
 struct Input
 {
     struct Key
@@ -189,6 +190,7 @@ struct Input
     struct Mouse
     {
         vec2 pos;
+        vec2 rel;
         struct Button
         {
             bool down;
@@ -201,5 +203,7 @@ struct Input
         } wheel;
     } mouse;
 };
+
+mat4 camera_holdclick(Input io, float dt, float move_speed = 1.0f);
 
 #endif

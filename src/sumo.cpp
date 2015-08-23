@@ -78,6 +78,7 @@ at the end of your prototyping app.
 #include "gui.cpp"
 #include "map.cpp"
 #include "pass.cpp"
+#include "camera.cpp"
 
 void panic(const char *msg)
 {
@@ -197,6 +198,8 @@ int main(int argc, char **argv)
         input.mouse.left.released = false;
         input.mouse.right.released = false;
         input.mouse.middle.released = false;
+        input.mouse.rel.x = 0.0f;
+        input.mouse.rel.y = 0.0f;
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -205,11 +208,15 @@ int main(int argc, char **argv)
             switch (event.type)
             {
                 case SDL_KEYDOWN:
-                    input.key.down[event.key.keysym.sym] = true;
+                    if (event.key.keysym.sym < SDL_NUM_SCANCODES)
+                        input.key.down[event.key.keysym.sym] = true;
                     break;
                 case SDL_KEYUP:
-                    input.key.down[event.key.keysym.sym] = false;
-                    input.key.released[event.key.keysym.sym] = true;
+                    if (event.key.keysym.sym < SDL_NUM_SCANCODES)
+                    {
+                        input.key.down[event.key.keysym.sym] = false;
+                        input.key.released[event.key.keysym.sym] = true;
+                    }
                     if (event.key.keysym.sym == SDLK_ESCAPE)
                         running = 0;
                     if (event.key.keysym.sym == SDLK_r)
@@ -220,6 +227,8 @@ int main(int argc, char **argv)
                 case SDL_MOUSEMOTION:
                     input.mouse.pos.x = event.motion.x;
                     input.mouse.pos.y = event.motion.y;
+                    input.mouse.rel.x = event.motion.xrel;
+                    input.mouse.rel.y = event.motion.yrel;
                     break;
                 case SDL_MOUSEBUTTONDOWN:
                     if (SDL_BUTTON_LMASK & event.button.button)

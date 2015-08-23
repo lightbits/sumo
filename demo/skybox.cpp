@@ -64,17 +64,12 @@ void init()
                           GL_RGBA);
 }
 
-mat4 camera_fps(Input io)
-{
-    persist r32 theta = 0.0f;
-    persist r32 phi = 0.0f;
-    return mat_rotate_y(0.0f);
-}
-
 void tick(Input io, float t, float dt)
 {
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
-    mat4 view = mat_translate(0.0f, 0.0f, -5.0f) * mat_rotate_y(0.3f * t);
+    // mat4 view = mat_translate(0.0f, 0.0f, -5.0f) * mat_rotate_y(0.3f * t);
+
+    mat4 view = camera_holdclick(io, dt);
 
     depth_test(true, GL_LEQUAL);
     depth_write(true);
