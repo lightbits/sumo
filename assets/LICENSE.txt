@@ -1,0 +1,5 @@
+The following assets were retrieved from http://www.pauldebevec.com/Probes/:
+    uffizi_cross.hdr
+    uffizi_cross_diffuse.hdr
+    uffizi_cross_specular.hdr
+    grace_probe.hdr
