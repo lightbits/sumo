@@ -25,16 +25,16 @@ char *SHADER_FS = GLSL150(
     out vec4 f_color;
     void main()
     {
-        f_color = texture(skybox, v_texel);
         float x = abs(v_texel.x);
         float y = abs(v_texel.y);
         float z = abs(v_texel.z);
-        if (x > y && x > z)
-            f_color.rgb *= vec3(0.5) + 0.5 * vec3(v_texel.x, 0.0, 0.0);
-        if (y > x && y > z)
-            f_color.rgb *= vec3(0.5) + 0.5 * vec3(0.0, v_texel.y, 0.0);
-        if (z > y && z > x)
-            f_color.rgb *= vec3(0.5) + 0.5 * vec3(0.0, 0.0, v_texel.z);
+        vec3 texel = v_texel;
+        if (z > y && z > x && v_texel.z < 0.0)
+        {
+            texel.y *= -1.0;
+            texel.x *= -1.0;
+        }
+        f_color = texture(skybox, texel);
     }
 );
 
@@ -52,7 +52,7 @@ void init()
     source.from_memory = true;
     pass = make_render_pass(source);
     cube = make_cube();
-    skybox = load_cubemap("./assets/uffizi_cross.hdr",
+    skybox = load_cubemap("./assets/uffizi_cross_specular.hdr",
                           CubemapCrossTB,
                           GL_LINEAR,
                           GL_LINEAR,
@@ -66,9 +66,7 @@ void init()
 
 void tick(Input io, float t, float dt)
 {
-    mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
-    // mat4 view = mat_translate(0.0f, 0.0f, -5.0f) * mat_rotate_y(0.3f * t);
-
+    mat4 projection = mat_perspective(PI / 2.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
     mat4 view = camera_holdclick(io, dt);
 
     depth_test(true, GL_LEQUAL);

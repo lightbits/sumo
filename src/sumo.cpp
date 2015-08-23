@@ -78,6 +78,8 @@ at the end of your prototyping app.
 #include "gui.cpp"
 #include "map.cpp"
 #include "pass.cpp"
+#include "cubemap.cpp"
+#include "mesh.cpp"
 #include "camera.cpp"
 
 void panic(const char *msg)

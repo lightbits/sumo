@@ -1,17 +1,3 @@
-enum CubemapFormat
-{
-    CubemapCrossLR,
-    //  . +Y  .  .
-    // -X +Z +X -Z
-    //  . -Y  .  .
-
-    CubemapCrossTB
-    //  . +Y  .
-    // -X +Z +X
-    //  . -Y  .
-    //  . -Z  .
-};
-
 GLuint load_cubemap(char *path,
                     CubemapFormat format,
                     GLenum min_filter,
