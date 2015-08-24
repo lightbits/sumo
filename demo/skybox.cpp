@@ -1,3 +1,7 @@
+/*
+TODO: Fix cubemap -z orientation thing
+*/
+
 #include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -66,7 +70,7 @@ void init()
 
 void tick(Input io, float t, float dt)
 {
-    mat4 projection = mat_perspective(PI / 2.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
+    mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
     mat4 view = camera_holdclick(io, dt);
 
     depth_test(true, GL_LEQUAL);

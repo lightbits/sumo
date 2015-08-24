@@ -1,9 +1,12 @@
-/* so_shader - v0.03
+/* so_shader - v0.04
 Simplified OpenGL shader loading and uniform- and attribute
 configuration.
 
 Changelog
 =========
+24. august 2015
+    Fixed file pointer leak
+
 22. july 2015
     Added quick load of vertex/fragment shader from memory
 
@@ -144,6 +147,7 @@ GLuint so_load_shader(char **paths, GLenum *types, int count)
             return 0;
         }
         srces[i][size] = '\0';
+        fclose(f);
     }
     GLuint result = so_load_shader_from_memory(srces, types, count);
     for (int i = 0; i < count; i++)
@@ -162,7 +166,6 @@ GLuint so_load_shader_from_memory(char **srces, GLenum *types, int count)
         if (!soi_compile_shader(shaders[i], types[i], srces[i]))
             return 0;
     }
-
     return soi_link_program(shaders, count);
 }
 

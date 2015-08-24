@@ -143,9 +143,8 @@ struct render_pass_source_t
     char *tess_eval_shader;
 };
 
-RenderPass make_render_pass(RenderPassSource source)
+void make_render_pass(RenderPass *result, RenderPassSource source)
 {
-    RenderPass result = {};
     char *sources[5];
     GLenum types[5];
     u32 count = 0;
@@ -174,12 +173,20 @@ RenderPass make_render_pass(RenderPassSource source)
         sources[count] = source.tess_eval_shader;
         types[count++] = GL_TESS_EVALUATION_SHADER;
     }
+    so_free_shader(result->shader);
+    map_free(&result->uniforms);
+    map_free(&result->attribs);
     if (source.from_memory)
-        result.shader = so_load_shader_from_memory(sources, types, count);
+        result->shader = so_load_shader_from_memory(sources, types, count);
     else
-        result.shader = so_load_shader(sources, types, count);
+        result->shader = so_load_shader(sources, types, count);
+    map_alloc(&result->uniforms, 128);
+    map_alloc(&result->attribs, 128);
+}
 
-    map_alloc(&result.uniforms, 128);
-    map_alloc(&result.attribs, 128);
+RenderPass make_render_pass(RenderPassSource source)
+{
+    RenderPass result = {};
+    make_render_pass(&result, source);
     return result;
 }

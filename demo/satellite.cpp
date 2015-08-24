@@ -23,7 +23,7 @@ void init()
         "./shaders/cube.vs",
         "./shaders/cube.fs"
     };
-    pass = make_render_pass(source);
+    make_render_pass(&pass, source);
     cube = make_cube();
 
     sat.m = 80.0f;

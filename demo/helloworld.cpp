@@ -11,6 +11,7 @@ void init()
 
 void tick(Input io, float t, float dt)
 {
+    clearc(0.35f, 0.55f, 1.0f, 1.0f);
     ImGui::NewFrame();
     persist float lightColor[4];
     persist float attenuation;

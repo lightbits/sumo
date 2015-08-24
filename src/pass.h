@@ -24,6 +24,7 @@ struct RenderPassSource
 };
 
 RenderPass make_render_pass(RenderPassSource source);
+void make_render_pass(RenderPass *pass, RenderPassSource source);
 void begin(RenderPass *pass);
 void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized = false);
 void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool normalized = false);

@@ -6,3 +6,9 @@ Todo
 * stb_truetype
 * #include in shader
 * Easy uniform manipulation using imgui and in-shader parameter declaration
+* SIMD particles
+* SIMD noise
+* Extend math lib, orthovec, transpose, ...
+* Attitude control using quaternions
+* FPS camera
+* Scene
