@@ -9,15 +9,6 @@
 RenderPass pass;
 GLuint quad;
 
-GLuint make_quad()
-{
-    float v[] = {
-        -1.0f, -1.0f, +1.0f, -1.0f, +1.0f, +1.0f,
-        +1.0f, +1.0f, -1.0f, +1.0f, -1.0f, -1.0f
-    };
-    return make_buffer(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
-}
-
 void init()
 {
     RenderPassSource source = {

@@ -10,7 +10,11 @@ GLuint load_cubemap(char *path,
                     GLenum data_format)
 {
     int width, height, channels;
-    u08 *data = stbi_load(path, &width, &height, &channels, SO_FORCE_LOAD_CHANNELS);
+    void *data = 0;
+    if (data_type == GL_FLOAT)
+        data = (void*)stbi_loadf(path, &width, &height, &channels, SO_FORCE_LOAD_CHANNELS);
+    else
+        data = (void*)stbi_load(path, &width, &height, &channels, SO_FORCE_LOAD_CHANNELS);
     if (!data)
     {
         printf("Failed to load texture (%s): %s\n", path, stbi_failure_reason());
@@ -46,7 +50,6 @@ GLuint load_cubemap(char *path,
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, min_filter);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, wrap_r);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, wrap_s);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, wrap_t); // TODO: Is this for cubemaps?
     // glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 

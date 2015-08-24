@@ -33,40 +33,6 @@ GLuint channel0;
 GLuint channel1;
 GLuint quad;
 
-GLuint
-so_load_cubemap(char *path,
-              int *out_width,
-              int *out_height,
-              GLenum min_filter,
-              GLenum mag_filter,
-              GLenum wrap_s,
-              GLenum wrap_t,
-              GLenum internal_format,
-              GLenum data_type,
-              GLenum data_format)
-{
-    int width, height, channels;
-    unsigned char *data = stbi_load(path, &width, &height, &channels, SO_FORCE_LOAD_CHANNELS);
-    if (!data)
-    {
-        printf("Failed to load texture (%s): %s\n", path, stbi_failure_reason());
-        return 0;
-    }
-
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
-    glPixelStorei(GL_UNPACK_SKIP_ROWS, height / 4);
-    glPixelStorei(GL_UNPACK_SKIP_PIXELS, width / 3);
-    GLuint result = so_make_tex2d(data,
-        width / 3, height / 4,
-        internal_format, data_format, data_type,
-        min_filter, mag_filter, wrap_s, wrap_t);
-
-    if (out_width)    *out_width = width;
-    if (out_height)   *out_height = height;
-    stbi_image_free(data);
-    return result;
-}
-
 void init()
 {
     RenderPassSource source = {
