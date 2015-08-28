@@ -1,5 +1,7 @@
 /*
 TODO: Fix cubemap -z orientation thing
+http://www.pauldebevec.com/Probes/
+http://eriksunden.com/projects/image_based_lighting/IBL_Report.pdf
 */
 
 #include "sumo.h"
