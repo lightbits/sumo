@@ -5,7 +5,6 @@
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
 #define LINE_BATCH_MAX_IN_BUFFER 256
-#define LINE_BATCH_MAX_COLOR_COUNT 8
 struct LineBatchVertex { vec2 p; vec4 c; };
 struct LineBatch
 {
@@ -13,22 +12,24 @@ struct LineBatch
     GLuint shader;
     GLuint a_position;
     GLuint a_color;
+    GLuint u_scale;
     LineBatchVertex vertices[LINE_BATCH_MAX_IN_BUFFER];
     u32 vertex_count;
-    u32 color_index;
-    u32 color_count;
-    vec4 color_scheme[LINE_BATCH_MAX_COLOR_COUNT];
+    r32 scale;
+    vec4 color;
 };
 
 static char *SHADER_LINE_BATCH_VS =
     "#version 150                                \n"
     "in vec2 position;                           \n"
     "in vec4 color;                              \n"
+    "uniform float scale;                        \n"
     "out vec4 vColor;                            \n"
     "void main()                                 \n"
     "{                                           \n"
     "    vColor = color;                         \n"
-    "    gl_Position = vec4(position, 0.0, 1.0); \n"
+    "    gl_Position = vec4(scale*position,      \n"
+    "                       0.0, 1.0);           \n"
     "}                                           \n";
 
 static char *SHADER_LINE_BATCH_FS =
@@ -47,9 +48,14 @@ void lines_set_width(float w)
     glLineWidth(w);
 }
 
-void lines_next_color()
+void lines_set_scale(float s)
 {
-    line_batch.color_index = (line_batch.color_index + 1) % line_batch.color_count;
+    line_batch.scale = s;
+}
+
+void lines_set_color(vec4 color)
+{
+    line_batch.color = color;
 }
 
 void lines_init()
@@ -58,19 +64,15 @@ void lines_init()
     glBindBuffer(GL_ARRAY_BUFFER, line_batch.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(LineBatchVertex) * LINE_BATCH_MAX_IN_BUFFER, 0, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    line_batch.color_index = 0;
-    line_batch.color_count = 5;
-    line_batch.color_scheme[0] = vec4(0.00f, 0.63f, 0.69f, 1.0f);
-    line_batch.color_scheme[1] = vec4(0.92f, 0.41f, 0.25f, 1.0f);
-    line_batch.color_scheme[2] = vec4(0.42f, 0.29f, 0.24f, 1.0f);
-    line_batch.color_scheme[3] = vec4(0.79f, 0.20f, 0.25f, 1.0f);
-    line_batch.color_scheme[4] = vec4(0.93f, 0.79f, 0.32f, 1.0f);
+    line_batch.scale = 1.0f;
+    line_batch.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
     line_batch.vertex_count = 0;
 
     line_batch.shader = so_load_shader_vf_from_memory(SHADER_LINE_BATCH_VS, SHADER_LINE_BATCH_FS);
     ASSERT(line_batch.shader != 0);
     line_batch.a_position = glGetAttribLocation(line_batch.shader, "position");
     line_batch.a_color    = glGetAttribLocation(line_batch.shader, "color");
+    line_batch.u_scale    = glGetUniformLocation(line_batch.shader, "scale");
 }
 
 void lines_draw()
@@ -90,6 +92,7 @@ void lines_draw()
                           GL_FALSE, sizeof(LineBatchVertex),
                           (const GLvoid*)(8));
 
+    glUniform1f(line_batch.u_scale, line_batch.scale);
     glDrawArrays(GL_LINES, 0, line_batch.vertex_count);
 
     glDisableVertexAttribArray(line_batch.a_position);
@@ -101,7 +104,6 @@ void lines_draw()
 void lines_flush()
 {
     lines_draw();
-    line_batch.color_index = 0;
     line_batch.vertex_count = 0;
 }
 
@@ -111,7 +113,7 @@ void lines_add_point(vec2 p)
         lines_flush();
     LineBatchVertex v = { };
     v.p = p;
-    v.c = line_batch.color_scheme[line_batch.color_index];
+    v.c = line_batch.color;
     line_batch.vertices[line_batch.vertex_count++] = v;
 }
 
@@ -182,21 +184,99 @@ void lines_draw_line(float x1, float y1, float x2, float y2)
     lines_add_line(vec2(x1, y1), vec2(x2, y2));
 }
 
+#define NUM_TRACES_X 30
+#define NUM_TRACES_Y 30
+vec2 points[NUM_TRACES_X * NUM_TRACES_Y];
+
+void reset(r32 range)
+{
+    clearc(0.0f, 0.0f, 0.0f, 1.0f);
+
+    for (u32 y = 0; y < NUM_TRACES_Y; y++)
+    for (u32 x = 0; x < NUM_TRACES_X; x++)
+    {
+        r32 xf = -1.0f + 2.0f * x / (float)(NUM_TRACES_X - 1);
+        r32 yf = -1.0f + 2.0f * y / (float)(NUM_TRACES_Y - 1);
+        points[y * NUM_TRACES_X + x] = vec2(xf, yf) * range;
+    }
+}
+
 void init()
 {
     lines_init();
+    lines_set_color(vec4(0.00f, 0.63f, 0.69f, 0.13f));
+    reset(20.0f);
+}
+
+vec2 f(r32 a, r32 b, r32 c, vec2 x)
+{
+    return vec2(a*x.x - x.x*x.y,
+                b*x.x*x.x - c*x.y);
+}
+
+r32 clampf(r32 x, r32 lo, r32 hi)
+{
+    if (x < lo)
+        return lo;
+    else if (x > hi)
+        return hi;
+    else
+        return x;
+}
+
+r32 mapf(r32 t0, r32 t1, r32 t, r32 y0, r32 y1)
+{
+    return clampf(y0 + (y1 - y0) * (t - t0) / (t1 - t0), y0, y1);
+}
+
+vec4 mixf(vec4 a, vec4 b, r32 t)
+{
+    return a + (b - a) * t;
 }
 
 void tick(Input io, float t, float dt)
 {
-    clearc(0.01f, 0.21f, 0.29f, 1.0f);
-    lines_next_color();
-    lines_set_width(1.0f);
-    lines_draw_line(0.0f, 0.0f, 1.0f, 1.0f);
-    lines_next_color();
-    lines_next_color();
-    lines_draw_rect(vec2(0.0f, 0.0f), vec2(0.2f, 0.2f), t, vec2(1.0f, 1.0f));
+    persist r32 a = 1.0f;
+    persist r32 b = 1.0f;
+    persist r32 c = 10.0f;
+    persist r32 range = 20.0f;
+    blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    for (u32 j = 0; j < 10; j++)
+    for (u32 i = 0; i < NUM_TRACES_X * NUM_TRACES_Y; i++)
+    {
+        vec2 q = points[i] + f(a, b, c, points[i]) * 0.1f*dt;
+        float l = length(q - points[i]);
+        vec4 color = mixf(vec4(0.00f, 0.63f, 0.69f, 0.13f),
+                          vec4(1.0f, 0.3f, 0.1f, 0.2f),
+                          mapf(0.0f, 0.05f, l, 0.0f, 1.0f));
+        // vec4 color = mixf(vec4(0.00f, 0.0f, 0.0f, 0.0f),
+        //                   vec4(1.0f, 0.3f, 0.1f, 0.2f),
+        //                   mapf(0.0f, 0.05f, l, 0.0f, 1.0f));
+        lines_set_color(color);
+        lines_draw_line(points[i], q);
+        points[i] = q;
+    }
+
+    range += io.mouse.wheel.y * 0.5f;
+    if (io.mouse.wheel.y != 0.0f)
+        reset(range);
+    lines_set_scale(1.0f / range);
+
+    // lines_next_color();
+    // lines_set_width(1.0f);
+    // lines_draw_line(0.0f, 0.0f, 1.0f, 1.0f);
+    // lines_next_color();
+    // lines_next_color();
+    // lines_draw_rect(vec2(0.0f, 0.0f), vec2(0.2f, 0.2f), t, vec2(1.0f, 1.0f));
     lines_flush();
+
+    ImGui::NewFrame();
+    ImGui::Begin("Parameters");
+    if (ImGui::SliderFloat("a", &a, 0.1f, 10.0f)) reset(range);
+    if (ImGui::SliderFloat("b", &b, 0.1f, 10.0f)) reset(range);
+    if (ImGui::SliderFloat("c", &c, 0.1f, 10.0f)) reset(range);
+    ImGui::End();
+    ImGui::Render();
 }
 
 #include "sumo.cpp"
