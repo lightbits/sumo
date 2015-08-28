@@ -200,6 +200,8 @@ int main(int argc, char **argv)
         input.mouse.left.released = false;
         input.mouse.right.released = false;
         input.mouse.middle.released = false;
+        input.mouse.wheel.x = 0.0f;
+        input.mouse.wheel.y = 0.0f;
         input.mouse.rel.x = 0.0f;
         input.mouse.rel.y = 0.0f;
 
