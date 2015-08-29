@@ -35,6 +35,7 @@ typedef int8_t      s08;
 
 #include "so_math.h"
 #include "so_intrin.h"
+#include "noise.h"
 #include "imgui/imgui.h"
 #include "map.h"
 #include "pass.h"
