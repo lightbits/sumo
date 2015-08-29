@@ -215,26 +215,6 @@ vec2 f(r32 a, r32 b, r32 c, vec2 x)
                 b*x.x*x.x - c*x.y);
 }
 
-r32 clampf(r32 x, r32 lo, r32 hi)
-{
-    if (x < lo)
-        return lo;
-    else if (x > hi)
-        return hi;
-    else
-        return x;
-}
-
-r32 mapf(r32 t0, r32 t1, r32 t, r32 y0, r32 y1)
-{
-    return clampf(y0 + (y1 - y0) * (t - t0) / (t1 - t0), y0, y1);
-}
-
-vec4 mixf(vec4 a, vec4 b, r32 t)
-{
-    return a + (b - a) * t;
-}
-
 void tick(Input io, float t, float dt)
 {
     persist r32 a = 3.0f;

@@ -2,6 +2,12 @@
 
 Changelog
 =========
+29. august 2015
+    rename lerpf to mixf
+    added vector mixf
+    clamp and map
+    scale(x, y, z)
+
 21. august 2015
     scale
     lerpf
@@ -159,27 +165,6 @@ vec4 operator *(mat4 a, vec4 b)
 mat4 operator *(mat4 a, mat4 b)
 {
     mat4 result = {};
-    // float *v = result.data;
-    // int i = 0;
-    // v[i++] = a.x.x * b.x.x + a.y.x * b.x.y + a.z.x * b.x.z + a.w.x * b.x.w;
-    // v[i++] = a.x.x * b.y.x + a.y.x * b.y.y + a.z.x * b.y.z + a.w.x * b.y.w;
-    // v[i++] = a.x.x * b.z.x + a.y.x * b.z.y + a.z.x * b.z.z + a.w.x * b.z.w;
-    // v[i++] = a.x.x * b.w.x + a.y.x * b.w.y + a.z.x * b.w.z + a.w.x * b.w.w;
-
-    // v[i++] = a.x.y * b.x.x + a.y.y * b.x.y + a.z.y * b.x.z + a.w.y * b.x.w;
-    // v[i++] = a.x.y * b.y.x + a.y.y * b.y.y + a.z.y * b.y.z + a.w.y * b.y.w;
-    // v[i++] = a.x.y * b.z.x + a.y.y * b.z.y + a.z.y * b.z.z + a.w.y * b.z.w;
-    // v[i++] = a.x.y * b.w.x + a.y.y * b.w.y + a.z.y * b.w.z + a.w.y * b.w.w;
-
-    // v[i++] = a.x.z * b.x.x + a.y.z * b.x.y + a.z.z * b.x.z + a.w.z * b.x.w;
-    // v[i++] = a.x.z * b.y.x + a.y.z * b.y.y + a.z.z * b.y.z + a.w.z * b.y.w;
-    // v[i++] = a.x.z * b.z.x + a.y.z * b.z.y + a.z.z * b.z.z + a.w.z * b.z.w;
-    // v[i++] = a.x.z * b.w.x + a.y.z * b.w.y + a.z.z * b.w.z + a.w.z * b.w.w;
-
-    // v[i++] = a.x.w * b.x.x + a.y.w * b.x.y + a.z.w * b.x.z + a.w.w * b.x.w;
-    // v[i++] = a.x.w * b.y.x + a.y.w * b.y.y + a.z.w * b.y.z + a.w.w * b.y.w;
-    // v[i++] = a.x.w * b.z.x + a.y.w * b.z.y + a.z.w * b.z.z + a.w.w * b.z.w;
-    // v[i++] = a.x.w * b.w.x + a.y.w * b.w.y + a.z.w * b.w.z + a.w.w * b.w.w;
     float *entry = result.data;
     for (int col = 0; col < 4; col++)
     for (int row = 0; row < 4; row++)
@@ -209,6 +194,17 @@ mat_scale(float s)
     result.x.x = s;
     result.y.y = s;
     result.z.z = s;
+    result.w.w = 1;
+    return result;
+}
+
+mat4
+mat_scale(float x, float y, float z)
+{
+    mat4 result = {};
+    result.x.x = x;
+    result.y.y = y;
+    result.z.z = z;
     result.w.w = 1;
     return result;
 }
@@ -249,6 +245,16 @@ mat_rotate_z(float angle_in_radians)
     result.y.x = -s;
     result.x.y = s;
     result.y.y = c;
+    return result;
+}
+
+mat4
+mat_translate(vec3 x)
+{
+    mat4 result = mat_identity();
+    result.w.x = x.x;
+    result.w.y = x.y;
+    result.w.z = x.z;
     return result;
 }
 
@@ -299,10 +305,27 @@ mat_perspective(float fov, float width, float height, float zn, float zf)
 
 ///////////// the works
 
-float lerpf(float min, float max, float t)
+float
+clampf(float x, float lo, float hi)
 {
-    return min + (max - min) * t;
+    if (x < lo)
+        return lo;
+    else if (x > hi)
+        return hi;
+    else
+        return x;
 }
+
+float
+mapf(float t0, float t1, float t, float y0, float y1)
+{
+    return clampf(y0 + (y1 - y0) * (t - t0) / (t1 - t0), y0, y1);
+}
+
+float mixf(float lo, float hi, float t) { return lo + (hi - lo) * t; }
+vec2  mixf(vec2  lo, vec2  hi, float t) { return lo + (hi - lo) * t; }
+vec3  mixf(vec3  lo, vec3  hi, float t) { return lo + (hi - lo) * t; }
+vec4  mixf(vec4  lo, vec4  hi, float t) { return lo + (hi - lo) * t; }
 
 float
 dot(vec2 a, vec2 b)
