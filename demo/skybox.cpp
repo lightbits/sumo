@@ -5,10 +5,9 @@ http://eriksunden.com/projects/image_based_lighting/IBL_Report.pdf
 */
 
 #include "sumo.h"
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
-#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define GLSL150(src) "#version 150\n" #src
 
 char *SHADER_VS = GLSL150(
