@@ -59,6 +59,16 @@ void clear(float r, float g, float b, float a, float depth)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void clear(vec4 color, float depth)
+{
+    clear(color.x, color.y, color.z, color.w, depth);
+}
+
+void clearc(vec4 color)
+{
+    clearc(color.x, color.y, color.z, color.w);
+}
+
 void depth_test(bool on, GLenum func)
 {
     if (on)
