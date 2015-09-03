@@ -21,6 +21,50 @@ typedef int8_t      s08;
 #define ASSERT SDL_assert
 #include "SDL_assert.h"
 
+#ifdef SUMO_DEBUG
+struct DebugCounter
+{
+    char *file;
+    char *function;
+    u64 cycle_count;
+    u64 hits;
+    int line;
+};
+
+// Predeclare an array of debug counters
+// The array is given a size in sumo.cpp,
+// after all possible counters have been
+// placed in the code, since then we can
+// use the __COUNTER__ macro to determine
+// how many counters have been set.
+DebugCounter global_debug_counters[];
+
+struct TimedBlock
+{
+    DebugCounter *counter;
+    u64 start;
+
+    TimedBlock(int index, int line, char *file, char *function)
+    {
+        this->counter = global_debug_counters + index;
+        this->counter->function = function;
+        this->counter->file = file;
+        this->counter->line = line;
+        this->start = __rdtsc();
+    }
+
+    ~TimedBlock()
+    {
+        this->counter->cycle_count += __rdtsc() - start;
+        this->counter->hits++;
+    }
+};
+
+#define TIMED_BLOCK TimedBlock timed_block_##__LINE__(__COUNTER__, __LINE__, __FILE__, __FUNCTION__)
+#else
+#define TIMED_BLOCK
+#endif
+
 #define SO_FBO_IMPLEMENTATION
 #include "so_fbo.h"
 

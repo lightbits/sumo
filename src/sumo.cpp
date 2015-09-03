@@ -82,6 +82,14 @@ at the end of your prototyping app.
 #include "mesh.cpp"
 #include "camera.cpp"
 
+// As mentioned, here we take advantage of single
+// compilation unit mode to get the number of counters
+// that have actually been placed by the programmer.
+// TODO: __COUNTER__ may be zero
+#ifdef SUMO_DEBUG
+DebugCounter global_debug_counters[__COUNTER__];
+#endif
+
 void panic(const char *msg)
 {
     printf("An error occurred: %s\n", msg);
@@ -282,6 +290,26 @@ int main(int argc, char **argv)
         if (sleep_time >= 0.0f && sleep_time >= SLEEP_GRANULARITY)
             SDL_Delay((u32)(sleep_time * 1000.0f));
         last_frame_t = get_tick();
+
+        #ifdef SUMO_DEBUG
+        for (u32 i = 0; i < sizeof(global_debug_counters) /
+             sizeof(DebugCounter); i++)
+        {
+            DebugCounter *c = global_debug_counters + i;
+            if (c->hits > 0)
+            {
+                printf("%s (L%d) %llucy %lluh %llucy/h\n",
+                       c->function, c->line, c->cycle_count,
+                       c->hits, c->cycle_count / c->hits);
+            }
+            else
+            {
+                printf("%s 0h\n", c->function);
+            }
+            c->cycle_count = 0;
+            c->hits = 0;
+        }
+        #endif
     }
 
     SDL_GL_DeleteContext(context);
