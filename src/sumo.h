@@ -2,6 +2,7 @@
 #define _prototype_h_
 
 #define persist static
+#define array_count(x) (sizeof(x) / sizeof(x[0]))
 
 #include <stdint.h>
 typedef float       r32;
