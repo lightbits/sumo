@@ -87,7 +87,10 @@ at the end of your prototyping app.
 // that have actually been placed by the programmer.
 // TODO: __COUNTER__ may be zero
 #ifdef SUMO_DEBUG
-DebugCounter global_debug_counters[__COUNTER__];
+// Allocate one more to ensure we always allocate
+// an array of size greater than zero
+const int num_debug_counters = __COUNTER__;
+DebugCounter global_debug_counters[num_debug_counters+1];
 #endif
 
 void panic(const char *msg)
@@ -292,8 +295,7 @@ int main(int argc, char **argv)
         last_frame_t = get_tick();
 
         #ifdef SUMO_DEBUG
-        for (u32 i = 0; i < sizeof(global_debug_counters) /
-             sizeof(DebugCounter); i++)
+        for (u32 i = 0; i < num_debug_counters; i++)
         {
             DebugCounter *c = global_debug_counters + i;
             if (c->hits > 0)
