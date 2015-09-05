@@ -306,7 +306,7 @@ mat_perspective(float fov, float width, float height, float zn, float zf)
     return result;
 }
 
-///////////// the works
+// vector functions
 
 float
 clampf(float x, float lo, float hi)

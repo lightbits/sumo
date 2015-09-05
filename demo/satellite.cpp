@@ -4,8 +4,6 @@
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define MULTISAMPLES 4
 
-// TODO: Quaternion attitude control
-
 RenderPass pass;
 Mesh cube;
 
