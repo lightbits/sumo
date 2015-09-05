@@ -73,6 +73,18 @@ at the end of your prototyping app.
 #define FRAME_TIME (1.0 / FPS_LOCK)
 #define SLEEP_GRANULARITY (0.01)
 
+#define SO_FBO_IMPLEMENTATION
+#include "so_fbo.h"
+
+#define SO_TEXTURE_IMPLEMENTATION
+#include "so_texture.h"
+
+#define SO_SHADER_IMPLEMENTATION
+#include "so_shader.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
@@ -85,7 +97,6 @@ at the end of your prototyping app.
 // As mentioned, here we take advantage of single
 // compilation unit mode to get the number of counters
 // that have actually been placed by the programmer.
-// TODO: __COUNTER__ may be zero
 #ifdef SUMO_DEBUG
 // Allocate one more to ensure we always allocate
 // an array of size greater than zero

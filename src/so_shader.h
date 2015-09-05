@@ -56,6 +56,7 @@ extern GLuint so_load_shader_from_memory(char **srces, GLenum *types, int count)
 extern GLuint so_load_shader_vf_from_memory(char *vs_src, char *fs_src);
 extern void so_free_shader(GLuint shader);
 
+#endif // SO_SHADER_HEADER_INCLUDE
 #ifdef SO_SHADER_IMPLEMENTATION
 #ifndef SOI_ASSERT
 #include "assert.h"
@@ -189,5 +190,4 @@ GLuint so_load_shader_vf(char *vs_path, char *fs_path)
     return so_load_shader(paths, types, 2);
 }
 
-#endif SO_SHADER_IMPLEMENTATION
-#endif SO_SHADER_HEADER_INCLUDE
+#endif // SO_SHADER_IMPLEMENTATION

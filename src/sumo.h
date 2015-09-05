@@ -15,7 +15,6 @@ typedef int16_t     s16;
 typedef int8_t      s08;
 
 #define SDL_ASSERT_LEVEL 2
-
 #include "opengl/gl_core_4_3.h"
 #include "SDL.h"
 
@@ -66,20 +65,10 @@ struct TimedBlock
 #define TIMED_BLOCK
 #endif
 
-#define SO_FBO_IMPLEMENTATION
 #include "so_fbo.h"
-
-#define SO_TEXTURE_IMPLEMENTATION
 #include "so_texture.h"
-
-#define SO_SHADER_IMPLEMENTATION
 #include "so_shader.h"
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 #include "so_math.h"
-#include "so_intrin.h"
 #include "noise.h"
 #include "imgui/imgui.h"
 #include "map.h"

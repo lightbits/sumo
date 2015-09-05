@@ -56,6 +56,7 @@ so_load_png_from_memory(const void *png_data,
                         GLenum wrap_s,
                         GLenum wrap_t);
 
+#endif // SO_TEXTURE_HEADER_INCLUDE
 #ifdef SO_TEXTURE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -160,4 +161,3 @@ so_load_png_from_memory(const void *png_data,
 }
 
 #endif // SO_TEXTURE_IMPLEMENTATION
-#endif // SO_TEXTURE_HEADER_INCLUDE

@@ -74,6 +74,7 @@ so_make_fbo_rgba(so_Framebuffer *out_result,
                  int width, int height,
                  GLenum color_format);
 
+#endif // SO_FBO_HEADER_INCLUDE
 #ifdef SO_FBO_IMPLEMENTATION
 
 // TODO: This is different for GLES
@@ -201,4 +202,3 @@ so_make_fbo_rgba(so_Framebuffer *out_result,
 }
 
 #endif // SO_FBO_IMPLEMENTATION
-#endif // SO_FBO_HEADER_INCLUDE
