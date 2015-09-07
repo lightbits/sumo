@@ -29,6 +29,7 @@ struct ParticleBuffer
 struct Particles
 {
     float scale[NUM_PARTICLES];
+    float lifetime[NUM_PARTICLES];
     vec3 color[NUM_PARTICLES];
     vec3 position[NUM_PARTICLES];
     vec3 velocity[NUM_PARTICLES];
@@ -48,7 +49,7 @@ so_Framebuffer make_shadow_map()
     return result;
 }
 
-void init()
+void spawn_particle(u32 i)
 {
     vec3 color_choices[3] = {
         vec3(0.70, 0.24, 0.11),
@@ -56,21 +57,23 @@ void init()
         vec3(0.77, 0.71, 0.46)
     };
 
+    particles.lifetime[i] = 2.0f + (6.0f - 2.0f) * frand();
+    particles.scale[i] = 0.02f + (0.08f - 0.02f) * frand();
+    particles.color[i] = color_choices[xor128() % 3];
+    particles.position[i] = vec3(-0.1f + 0.2f * frand(),
+                                 0.1f + 0.1f * frand(),
+                                 -0.1f + 0.2f * frand());
+    particles.position[i].z *= 0.4f;
+    particles.position[i].x *= 0.4f;
+    particles.velocity[i] = vec3(-1.0f + 2.0f * frand(),
+                                 1.0f + frand() * 2.0f,
+                                 -1.0f + 2.0f * frand());
+}
+
+void init()
+{
     for (u32 i = 0; i < NUM_PARTICLES; i++)
-    {
-        int xi = i % 4;
-        int yi = (i / 4) % 4;
-        int zi = ((i / 4) / 4) % 16;
-        particles.scale[i] = 0.04f + (0.08f - 0.04f) * frand();
-        particles.color[i] = color_choices[xor128() % 3];
-        particles.position[i] = vec3(-1.0f, 0.125f, -1.0f) +
-                                vec3(xi / 4.0f, yi / 6.0f, zi / 16.0f) * 2.0f;
-        particles.position[i].z *= 0.4f;
-        particles.position[i].x *= 0.4f;
-        particles.velocity[i] = vec3((-1.0f + 2.0f * frand()) * 1.0f,
-                                     (frand()) * 3.0f,
-                                     (-1.0f + 2.0f * frand()) * 1.0f);
-    }
+        spawn_particle(i);
 
     buffer.scale = make_buffer(GL_ARRAY_BUFFER,
                                sizeof(float) * NUM_PARTICLES,
@@ -119,22 +122,33 @@ void update_particles(float dt)
 {
     for (u32 i = 0; i < NUM_PARTICLES; i++)
     {
+        float *lifetime = particles.lifetime + i;
+        if (*lifetime < 0.0f)
+            spawn_particle(i);
         vec3 *velocity = particles.velocity + i;
         vec3 *position = particles.position + i;
+        float *scale = particles.scale + i;
+
+        if (*lifetime < 1.0f)
+            *scale *= exp(-2.0f * dt);
+
+        *lifetime -= dt;
         velocity->y -= 5.0f * dt;
         *position += *velocity * dt;
-        float r = particles.scale[i];
-        if (position->y - r <= 0.0f)
+        if (position->y - *scale <= 0.0f)
         {
             velocity->y *= -0.3f;
             velocity->x *= 0.98f;
             velocity->z *= 0.98f;
-            position->y = r;
+            position->y = *scale;
         }
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.position);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vec3) * NUM_PARTICLES, particles.position);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.scale);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(r32) * NUM_PARTICLES, particles.scale);
 }
 
 void tick(Input io, float t, float dt)
