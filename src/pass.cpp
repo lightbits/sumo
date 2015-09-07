@@ -134,6 +134,12 @@ void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized)
     attribv(name, GL_FLOAT, count, stride * sizeof(GLfloat), offset * sizeof(GLfloat));
 }
 
+void attribdiv(char *name, u32 divisor)
+{
+    GLint location = get_attrib_location(_active_render_pass, name);
+    glVertexAttribDivisor(location, divisor);
+}
+
 struct render_pass_source_t
 {
     char *vertex_shader;

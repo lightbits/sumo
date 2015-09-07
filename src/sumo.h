@@ -122,12 +122,16 @@ void depth_write(bool on)
     glDepthMask(on ? GL_TRUE : GL_FALSE);
 }
 
-void blend_mode(bool on, GLenum src, GLenum dst)
+void blend_mode(bool on,
+                GLenum src = GL_SRC_ALPHA,
+                GLenum dst = GL_ONE_MINUS_SRC_ALPHA,
+                GLenum mode = GL_FUNC_ADD)
 {
     if (on)
     {
         glEnable(GL_BLEND);
         glBlendFunc(src, dst);
+        glBlendEquation(mode);
     }
     else
     {

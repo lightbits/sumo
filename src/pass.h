@@ -28,6 +28,7 @@ void make_render_pass(RenderPass *pass, RenderPassSource source);
 void begin(RenderPass *pass);
 void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized = false);
 void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool normalized = false);
+void attribdiv(char *name, u32 divisor);
 void uniformi(char *name, s32 x);
 void uniformi(char *name, s32 x, s32 y);
 void uniformi(char *name, s32 x, s32 y, s32 z);
