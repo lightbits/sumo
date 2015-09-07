@@ -3,8 +3,10 @@ Graphical and Numerical Prototyping Kit
 
 Demo
 ====
- * Lines.cpp - Line API - Phase portrait of nonlinear dynamic differential equation
+ * lines.cpp - Line API - Phase portrait of nonlinear dynamic differential equation
  ![](./show/lines.png)
+ * particles.cpp - SIMD and shadow mapping
+ ![](./show/particles.png)
 
 Todo
 ====
