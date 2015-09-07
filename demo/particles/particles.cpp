@@ -1,3 +1,10 @@
+/*
+Todo:
+* Actual SIMD update of particles
+* More complex floor geometry
+* Raycast against floor triangles to determine collision
+*/
+
 #include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -116,12 +123,13 @@ void update_particles(float dt)
         vec3 *position = particles.position + i;
         velocity->y -= 5.0f * dt;
         *position += *velocity * dt;
-        if (position->y - particles.scale[i] <= 0.0f)
+        float r = particles.scale[i];
+        if (position->y - r <= 0.0f)
         {
             velocity->y *= -0.3f;
-            velocity->x *= 0.97f;
-            velocity->z *= 0.97f;
-            position->y = particles.scale[i];
+            velocity->x *= 0.98f;
+            velocity->z *= 0.98f;
+            position->y = r;
         }
     }
 
@@ -134,11 +142,13 @@ void tick(Input io, float t, float dt)
     update_particles(dt);
 
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
-    mat4 view = mat_translate(0.0f, -0.2f, -5.0f) * mat_rotate_x(0.3f) * mat_rotate_y(0.4f);
+    mat4 view = camera_holdclick(io, dt);
+    // mat4 view = mat_translate(0.0f, -0.2f, -5.0f) * mat_rotate_x(0.3f) * mat_rotate_y(0.4f);
     mat4 light_projection = mat_ortho_depth(-4.0f, +4.0f, -4.0f, +4.0f, 0.1f, 10.0f);
     mat4 light_view = mat_translate(0.0f, 0.0f, -4.0f) * mat_rotate_x(0.7f) * mat_rotate_y(-0.4f);
     vec4 sun_dir = mat_rotate_y(0.4f) * mat_rotate_x(-0.7f) * vec4(0.0f, 0.0f, -1.0f, 0.0f);
 
+    // TODO: blend mode min
     blend_mode(true, GL_ONE, GL_ONE);
     depth_test(false, GL_LEQUAL);
     depth_write(false);
