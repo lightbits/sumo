@@ -66,7 +66,7 @@ void spawn_particle(u32 i)
     particles.position[i].z *= 0.4f;
     particles.position[i].x *= 0.4f;
     particles.velocity[i] = vec3(-1.0f + 2.0f * frand(),
-                                 1.0f + frand() * 2.0f,
+                                 1.0f + frand() * 4.0f,
                                  -1.0f + 2.0f * frand());
 }
 
@@ -156,8 +156,8 @@ void tick(Input io, float t, float dt)
     update_particles(dt);
 
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
-    mat4 view = camera_holdclick(io, dt);
-    // mat4 view = mat_translate(0.0f, -0.2f, -5.0f) * mat_rotate_x(0.3f) * mat_rotate_y(0.4f);
+    // mat4 view = camera_holdclick(io, dt);
+    mat4 view = mat_translate(0.0f, -0.2f, -5.0f) * mat_rotate_x(0.3f) * mat_rotate_y(0.4f);
     mat4 light_projection = mat_ortho_depth(-4.0f, +4.0f, -4.0f, +4.0f, 0.1f, 10.0f);
     mat4 light_view = mat_translate(0.0f, 0.0f, -4.0f) * mat_rotate_x(0.7f) * mat_rotate_y(-0.4f);
     vec4 sun_dir = mat_rotate_y(0.4f) * mat_rotate_x(-0.7f) * vec4(0.0f, 0.0f, -1.0f, 0.0f);

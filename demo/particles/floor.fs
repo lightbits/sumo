@@ -7,5 +7,9 @@ out vec4 f_color;
 void main()
 {
     float shadow = texture(channel, v_texel).r;
-    f_color = vec4(1.0, 0.5, 0.2, 1.0) * exp2(-4.0*shadow);
+    float blend = exp2(-3.0*shadow);
+    vec3 albedo = vec3(1.0, 0.5, 0.2);
+    vec3 skyref = vec3(0.2, 0.25, 0.35);
+    f_color.rgb = mix(albedo * skyref, albedo, blend);
+    f_color.a = 1.0;
 }
