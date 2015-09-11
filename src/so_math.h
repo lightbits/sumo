@@ -73,12 +73,18 @@ union vec3
 union vec4
 {
     vec4(float X, float Y, float Z, float W) : x(X), y(Y), z(Z), w(W) {}
+    vec4(vec3 V, float W) : x(V.x), y(V.y), z(V.z), w(W) {}
     vec4() : x(0), y(0), z(0), w(0) {}
     struct
     {
         float x, y, z, w;
     };
     float data[4];
+
+    vec3 xyz()
+    {
+        return vec3(x, y, z);
+    }
 };
 
 union mat4
