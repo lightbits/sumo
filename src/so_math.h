@@ -286,16 +286,22 @@ mat_ortho(float left, float right, float bottom, float top)
     return result;
 }
 
+/*
+Map x from [left, right] to [-1, +1]
+    y from [bottom, top] to [-1, +1]
+    z from [zn, zf]      to [-1, +1]
+*/
 mat4
 mat_ortho_depth(float left, float right, float bottom, float top, float zn, float zf)
 {
-    mat4 result = mat_identity();
+    mat4 result = {};
     result.x.x = 2.0f / (right - left);
     result.y.y = 2.0f / (top - bottom);
     result.z.z = 2.0f / (zn - zf);
     result.w.x = (right + left) / (left - right);
     result.w.y = (top + bottom) / (bottom - top);
     result.w.z = (zf + zn) / (zn - zf);
+    result.w.w = 1.0f;
     return result;
 }
 
