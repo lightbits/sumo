@@ -9,7 +9,6 @@ out vec2 v_texel;
 
 void main()
 {
-
     vec3 world = vec3(4.0 * position.x, 0.0, 4.0 * position.y);
     gl_Position = projection * view * vec4(world, 1.0);
 

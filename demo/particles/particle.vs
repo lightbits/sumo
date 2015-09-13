@@ -9,6 +9,7 @@ uniform mat4 view;
 out vec2 v_coord;
 out vec3 v_color;
 out vec3 v_view_centre;
+out vec3 v_world_centre;
 out float v_scale;
 
 void main()
@@ -17,7 +18,8 @@ void main()
     v_color = color;
     v_scale = scale;
     mat3 R = transpose(mat3(view));
-    vec3 world = position + R * vec3(scale * quadcoord, 0.0);
+    v_world_centre = position;
     v_view_centre = (view * vec4(position, 1.0)).xyz;
+    vec3 world = position + R * vec3(scale * quadcoord, 0.0);
     gl_Position = projection * view * vec4(world, 1.0);
 }

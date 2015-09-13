@@ -1,12 +1,14 @@
 #version 150
 
 in vec2 v_coord;
-out vec4 f_color;
+in float v_depth;
+out vec2 f_output;
 
 void main()
 {
     float r2 = dot(v_coord, v_coord);
-    // float alpha = smoothstep(1.0, 0.05, r2);
-    float alpha = exp2(-14.0*r2*r2);
-    f_color = vec4(alpha * 0.6);
+    float fade = smoothstep(0.98, 1.0, r2);
+    float shadow = 1.0 - exp2(-10.0 * r2 * r2);
+    // float shadow = smoothstep(0.0, 1.0, r2);
+    f_output = vec2(shadow, mix(v_depth, 1.0, fade));
 }

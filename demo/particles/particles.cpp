@@ -12,13 +12,9 @@ Todo:
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
 so_Framebuffer shadow_map;
-so_Framebuffer geometry_map;
-so_Framebuffer occlusion_map;
 RenderPass shadow_pass;
 RenderPass particle_pass;
 RenderPass floor_pass;
-RenderPass occlusion_pass;
-RenderPass merge_pass;
 RenderPass debug_pass;
 GLuint quad;
 
@@ -49,28 +45,6 @@ so_Framebuffer make_shadow_map()
     GLenum target = GL_TEXTURE_2D;
     so_Framebuffer result = { };
     bool status = so_make_fbo(&result, 512, 512, 1, &color, &target, 0);
-    ASSERT(status == true);
-    return result;
-}
-
-so_Framebuffer make_geometry_map()
-{
-    so_Framebuffer result = {};
-    bool status = so_make_fbo_rgbad(&result, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA32F);
-    ASSERT(status == true);
-    return result;
-}
-
-so_Framebuffer make_occlusion_map()
-{
-    GLuint color = so_make_tex2d(0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_R32F,
-                                 GL_RED, GL_FLOAT,
-                                 GL_LINEAR, GL_LINEAR,
-                                 GL_CLAMP_TO_EDGE,
-                                 GL_CLAMP_TO_EDGE);
-    GLenum target = GL_TEXTURE_2D;
-    so_Framebuffer result = { };
-    bool status = so_make_fbo(&result, WINDOW_WIDTH, WINDOW_HEIGHT, 1, &color, &target, 0);
     ASSERT(status == true);
     return result;
 }
@@ -155,21 +129,7 @@ void init()
     };
     floor_pass = make_render_pass(floor_pass_source);
 
-    RenderPassSource occlusion_pass_source = {
-        "./demo/particles/occlusion.vs",
-        "./demo/particles/occlusion.fs"
-    };
-    occlusion_pass = make_render_pass(occlusion_pass_source);
-
-    RenderPassSource merge_pass_source = {
-        "./demo/particles/merge.vs",
-        "./demo/particles/merge.fs"
-    };
-    merge_pass = make_render_pass(merge_pass_source);
-
     shadow_map = make_shadow_map();
-    geometry_map = make_geometry_map();
-    occlusion_map = make_occlusion_map();
     quad = make_quad();
 }
 
@@ -221,14 +181,15 @@ void tick(Input io, float t, float dt)
     vec3 sun_dir = (view * mat_rotate_y(0.4f) * mat_rotate_x(-0.7f) * vec4(0.0f, 0.0f, -1.0f, 0.0f)).xyz();
     sun_dir *= -1.0f;
 
-    // TODO: blend mode min
     begin(&shadow_pass, &shadow_map);
-    blend_mode(true, GL_ONE, GL_ONE);
+    blend_mode(true, GL_ONE, GL_ONE, GL_MIN);
     depth_test(false);
     depth_write(false);
-    clearc(0.0f, 0.0f, 0.0f, 0.0f);
+    clearc(1, 1, 1, 1);
     uniformf("projection", light_projection);
     uniformf("view", light_view);
+    uniformf("z_near", 0.1f);
+    uniformf("z_far", 10.0f);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("quadcoord", 2, 2, 0);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.position);
@@ -239,14 +200,30 @@ void tick(Input io, float t, float dt)
     attribdiv("scale", 1);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, NUM_PARTICLES);
 
-    begin(&particle_pass, &geometry_map);
-    blend_mode(false);
+    glBindTexture(GL_TEXTURE_2D, shadow_map.color[0]);
+    glActiveTexture(GL_TEXTURE0);
+
+    begin(&floor_pass, 0);
     depth_test(true, GL_LEQUAL);
     depth_write(true);
+    blend_mode(false);
     clear(0.95f, 0.97f, 1.0f, 1.0f, 1.0f);
+    uniformi("shadow_map", 0);
+    uniformf("light_projection", light_projection);
+    uniformf("light_view", light_view);
     uniformf("projection", projection);
-    uniformf("z_near", z_near);
-    uniformf("z_far", z_far);
+    uniformf("view", view);
+    glBindBuffer(GL_ARRAY_BUFFER, quad);
+    attribfv("position", 2, 2, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    begin(&particle_pass, 0);
+    uniformi("shadow_map", 0);
+    uniformf("light_projection", light_projection);
+    uniformf("light_view", light_view);
+    uniformf("light_z_near", 0.1f);
+    uniformf("light_z_far", 10.0f);
+    uniformf("projection", projection);
     uniformf("view", view);
     uniformf("sun", sun_dir);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
@@ -262,67 +239,17 @@ void tick(Input io, float t, float dt)
     attribdiv("scale", 1);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, NUM_PARTICLES);
 
-    begin(&occlusion_pass, &occlusion_map);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(geometry_map.target[0], geometry_map.color[0]);
-    uniformi("channel", 0);
-    blend_mode(true, GL_ONE, GL_ONE, GL_MIN);
-    depth_test(false);
-    depth_write(false);
-    clearc(1.0f, 1.0f, 1.0f, 1.0f);
-    uniformf("projection", projection);
-    uniformf("z_near", z_near);
-    uniformf("z_far", z_far);
-    uniformf("view", view);
-    uniformf("extrusion_scale", 4.0f);
-    uniformf("resolution", vec2(WINDOW_WIDTH, WINDOW_HEIGHT));
-    uniformf("sun", sun_dir);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
-    attribfv("quadcoord", 2, 2, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.position);
-    attribfv("position", 3, 3, 0);
-    attribdiv("position", 1);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.scale);
-    attribfv("scale", 1, 1, 0);
-    attribdiv("scale", 1);
-    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, NUM_PARTICLES);
-
-    begin(&floor_pass, 0);
-    depth_test(false);
-    depth_write(false);
-    blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_FUNC_ADD);
-    clear(0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
-    glBindTexture(shadow_map.target[0], shadow_map.color[0]);
-    uniformi("channel", 0);
-    uniformf("light_projection", light_projection);
-    uniformf("light_view", light_view);
-    uniformf("projection", projection);
-    uniformf("view", view);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
-    attribfv("position", 2, 2, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    begin(&merge_pass, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(geometry_map.target[0], geometry_map.color[0]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(occlusion_map.target[0], occlusion_map.color[0]);
-    uniformi("channel_geometry", 0);
-    uniformi("channel_occlusion", 1);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
-    attribfv("position", 2, 2, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    #if 0
-    s32 scale = 256;
+    #if 1
+    s32 scale = 128;
     blend_mode(false);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, scale, scale);
     begin(&debug_pass);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("position", 2, 2, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(shadow_map.target[0], shadow_map.color[0]);
+
+    glViewport(0, 0, scale, scale);
     uniformf("maskr", vec4(1, 1, 1, 1));
     uniformf("maskg", vec4(0, 0, 0, 0));
     uniformf("maskb", vec4(0, 0, 0, 0));
@@ -330,27 +257,12 @@ void tick(Input io, float t, float dt)
     uniformi("channel", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glBindTexture(geometry_map.target[0], geometry_map.color[0]);
     glViewport(scale, 0, scale, scale);
-    uniformf("maskr", vec4(1, 0, 0, 0));
-    uniformf("maskg", vec4(0, 1, 0, 0));
-    uniformf("maskb", vec4(0, 0, 1, 0));
-    uniformf("maska", vec4(0, 0, 0, 0));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glViewport(2 * scale, 0, scale, scale);
     uniformf("maskr", vec4(0, 0, 0, 0));
-    uniformf("maskg", vec4(0, 0, 0, 0));
-    uniformf("maskb", vec4(0, 0, 0, 0));
-    uniformf("maska", vec4(1, 1, 1, 1));
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindTexture(occlusion_map.target[0], occlusion_map.color[0]);
-    glViewport(0, scale, scale, scale);
-    uniformf("maskr", vec4(1, 1, 1, 1));
-    uniformf("maskg", vec4(0, 0, 0, 0));
+    uniformf("maskg", vec4(1, 1, 1, 1));
     uniformf("maskb", vec4(0, 0, 0, 0));
     uniformf("maska", vec4(0, 0, 0, 0));
+    uniformi("channel", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     #endif
 }
