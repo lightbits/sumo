@@ -103,7 +103,7 @@ void clearc(vec4 color)
     clearc(color.x, color.y, color.z, color.w);
 }
 
-void depth_test(bool on, GLenum func)
+void depth_test(bool on, GLenum func = GL_LEQUAL)
 {
     if (on)
     {
