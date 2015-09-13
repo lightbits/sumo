@@ -10,8 +10,7 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 light_projection;
 uniform mat4 light_view;
-uniform float light_z_near;
-uniform float light_z_far;
+uniform vec3 sky_bounce;
 uniform vec3 sun;
 out vec4 f_color;
 
@@ -39,20 +38,15 @@ void main()
     f_color.rgb = v_color * sqrt(radiance);
 
     // Reproject into shadow map and extract occlusion
-    vec4 light_view_position = light_view * vec4(world_position, 1.0);
-    // TODO: Orthographic projection already does this for you!
-    float light_depth = (light_view_position.z + light_z_near) / (light_z_near - light_z_far);
-
-    vec4 light_coord = light_projection * light_view_position;
-    light_coord.xy /= light_coord.w;
-    vec2 light_texel = vec2(0.5) + 0.5 * light_coord.xy;
+    vec4 light_ndc = light_projection * light_view * vec4(world_position, 1.0);
+    vec2 light_texel = vec2(0.5) + 0.5 * light_ndc.xy;
     vec2 light_sample = texture(shadow_map, light_texel).rg;
     float shadow = light_sample.r;
-    float shadow_depth = light_sample.g;
+    float shadow_depth = -1.0 + 2.0 * light_sample.g;
+    float light_depth = light_ndc.z;
     if (light_depth > shadow_depth - 0.002)
     {
-        vec3 skyref = vec3(0.2, 0.25, 0.35); // TODO: Pass as uniform
-        f_color.rgb = mix(f_color.rgb * skyref, f_color.rgb, shadow);
+        f_color.rgb = mix(f_color.rgb * sky_bounce, f_color.rgb, shadow);
     }
 
     // Compute impostor frag depth and store as ndc for depth testing

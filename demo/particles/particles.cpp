@@ -169,6 +169,7 @@ void update_particles(float dt)
 void tick(Input io, float t, float dt)
 {
     update_particles(dt);
+    vec3 sky_bounce = vec3(0.2f, 0.25f, 0.35f);
     r32 z_near = 0.1f;
     r32 z_far = 10.0f;
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, z_near, z_far);
@@ -188,8 +189,6 @@ void tick(Input io, float t, float dt)
     clearc(1, 1, 1, 1);
     uniformf("projection", light_projection);
     uniformf("view", light_view);
-    uniformf("z_near", 0.1f);
-    uniformf("z_far", 10.0f);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("quadcoord", 2, 2, 0);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.position);
@@ -213,6 +212,7 @@ void tick(Input io, float t, float dt)
     uniformf("light_view", light_view);
     uniformf("projection", projection);
     uniformf("view", view);
+    uniformf("sky_bounce", sky_bounce);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("position", 2, 2, 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -221,10 +221,9 @@ void tick(Input io, float t, float dt)
     uniformi("shadow_map", 0);
     uniformf("light_projection", light_projection);
     uniformf("light_view", light_view);
-    uniformf("light_z_near", 0.1f);
-    uniformf("light_z_far", 10.0f);
     uniformf("projection", projection);
     uniformf("view", view);
+    uniformf("sky_bounce", sky_bounce);
     uniformf("sun", sun_dir);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("quadcoord", 2, 2, 0);
