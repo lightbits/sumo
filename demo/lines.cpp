@@ -3,6 +3,7 @@
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
+#include <stdio.h>
 
 #define LINE_BATCH_MAX_IN_BUFFER 256
 struct LineBatchVertex { vec2 p; vec4 c; };
@@ -244,7 +245,7 @@ void tick(Input io, float t, float dt)
         vec4 color = mixf(vec4(0.00f, 0.63f, 0.69f, 0.13f),
                           vec4(1.0f, 0.3f, 0.1f, 0.2f),
                           blend);
-        // vec4 color = vec4(1.0f, 1.0f, 1.0f, 0.1f);
+
         lines_set_color(color);
         lines_draw_line(points[i], q);
         points[i] = q;
@@ -258,6 +259,14 @@ void tick(Input io, float t, float dt)
 
     ImGui::NewFrame();
     ImGui::Begin("Parameters");
+
+    float x = (-1.0f + 2.0f * io.mouse.pos.x / (float)WINDOW_WIDTH) * field_range;
+    float y = (+1.0f - 2.0f * io.mouse.pos.y / (float)WINDOW_HEIGHT) * field_range;
+
+    char location_text[255];
+    sprintf(location_text, "x: %.2f, y: %.2f", x, y);
+
+    ImGui::Text(location_text);
     if (ImGui::SliderFloat("a", &a, 0.1f, 10.0f)) reset();
     if (ImGui::SliderFloat("b", &b, 0.1f, 10.0f)) reset();
     if (ImGui::SliderFloat("c", &c, 0.1f, 10.0f)) reset();

@@ -2,6 +2,9 @@
 
 Changelog
 =========
+24. september 2015
+    smoothstep
+
 29. august 2015
     rename lerpf to mixf
     added vector mixf
@@ -331,6 +334,7 @@ clampf(float x, float lo, float hi)
         return x;
 }
 
+
 float
 mapf(float t0, float t1, float t, float y0, float y1)
 {
@@ -341,6 +345,12 @@ float mixf(float lo, float hi, float t) { return lo + (hi - lo) * t; }
 vec2  mixf(vec2  lo, vec2  hi, float t) { return lo + (hi - lo) * t; }
 vec3  mixf(vec3  lo, vec3  hi, float t) { return lo + (hi - lo) * t; }
 vec4  mixf(vec4  lo, vec4  hi, float t) { return lo + (hi - lo) * t; }
+
+float smoothstepf(float lo, float hi, float x)
+{
+    float t = clampf((x - lo) / (hi - lo), 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+}
 
 float
 dot(vec2 a, vec2 b)
