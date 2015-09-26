@@ -105,14 +105,14 @@ void init()
                                particles.color,
                                GL_STATIC_DRAW);
 
-    particle_pass = load_render_pass("./demo/particles/particle.vs",
-                                     "./demo/particles/particle.fs");
-    shadow_pass = load_render_pass("./demo/particles/shadow.vs",
-                                   "./demo/particles/shadow.fs");
-    debug_pass = load_render_pass("./shaders/debug-draw-rt.vs",
-                                  "./shaders/debug-draw-rt.fs");
-    floor_pass = load_render_pass("./demo/particles/floor.vs",
-                                  "./demo/particles/floor.fs");
+    particle_pass = load_render_pass("demo/particles/particle.vs",
+                                     "demo/particles/particle.fs");
+    shadow_pass = load_render_pass("demo/particles/shadow.vs",
+                                   "demo/particles/shadow.fs");
+    debug_pass = load_render_pass("assets/shaders/debug-draw-rt.vs",
+                                  "assets/shaders/debug-draw-rt.fs");
+    floor_pass = load_render_pass("demo/particles/floor.vs",
+                                  "demo/particles/floor.fs");
 
     shadow_map = make_shadow_map();
     quad = make_quad();
