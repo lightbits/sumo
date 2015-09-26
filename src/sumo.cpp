@@ -85,13 +85,20 @@ at the end of your prototyping app.
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#define SO_MAP_IMPLEMENTATION
+#include "so_map.h"
+
+#define SO_NOISE_IMPLEMENTATION
+#include "so_noise.h"
+
+#define SO_MESH_IMPLEMENTATION
+#include "so_mesh.h"
+
 #include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
-#include "map.cpp"
 #include "pass.cpp"
 #include "cubemap.cpp"
-#include "mesh.cpp"
 #include "camera.cpp"
 
 // As mentioned, here we take advantage of single

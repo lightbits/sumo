@@ -69,10 +69,19 @@ struct TimedBlock
 #include "so_texture.h"
 #include "so_shader.h"
 #include "so_math.h"
-#include "noise.h"
+#include "so_noise.h"
+#include "so_map.h"
+#include "so_mesh.h"
 #include "imgui/imgui.h"
-#include "map.h"
 #include "pass.h"
+
+typedef Map(r32) Map_r32;
+typedef Map(u32) Map_u32;
+typedef Map(u16) Map_u16;
+typedef Map(u08) Map_u08;
+typedef Map(s32) Map_s32;
+typedef Map(s16) Map_s16;
+typedef Map(s08) Map_s08;
 
 void clearc(float r, float g, float b, float a)
 {
@@ -138,27 +147,6 @@ void blend_mode(bool on,
         glDisable(GL_BLEND);
     }
 }
-
-GLuint make_buffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage)
-{
-    GLuint result = 0;
-    glGenBuffers(1, &result);
-    glBindBuffer(target, result);
-    glBufferData(target, size, data, usage);
-    glBindBuffer(target, 0);
-    return result;
-}
-
-struct Mesh
-{
-    GLuint vbo;
-    GLuint ibo;
-    u32 index_count;
-    GLenum index_type;
-};
-
-GLuint make_quad();
-Mesh make_cube();
 
 // TODO: Make mouse pos/rel normalized to [0, 1]?
 struct Input

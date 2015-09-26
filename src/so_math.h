@@ -1,4 +1,4 @@
-/* so_math - v0.04
+/* so_math - v0.4
 
 Changelog
 =========
@@ -24,8 +24,8 @@ Changelog
 
 */
 
-#ifndef _so_math_h_
-#define _so_math_h_
+#ifndef SO_MATH_HEADER_INCLUDE
+#define SO_MATH_HEADER_INCLUDE
 #include "math.h"
 
 #ifndef PI
@@ -415,4 +415,4 @@ normalize(vec4 a)
     return result;
 }
 
-#endif
+#endif // SO_MATH_HEADER_INCLUDE

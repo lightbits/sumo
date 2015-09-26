@@ -1,3 +1,52 @@
+/* so_mesh - v0.1
+
+Changelog
+====================================================================
+26. september 2015
+    Converted to so code format for code reuse purposes.
+
+How to compile
+====================================================================
+This file contains both the header file and the implementation file.
+To create the implementation in one source file include this header:
+
+    #define SO_MESH_IMPLEMENTATION
+    #include "so_mesh.h"
+
+The file expects the following OpenGL symbols to be defined:
+    GLuint GLenum GLsizei GLvoid
+    glGenBuffers glBindBuffer glBufferData
+    GL_ARRAY_BUFFER GL_STATIC_DRAW GL_UNSIGNED_INT
+*/
+
+#ifndef SO_MESH_HEADER_INCLUDE
+#define SO_MESH_HEADER_INCLUDE
+
+struct Mesh
+{
+    GLuint vbo;
+    GLuint ibo;
+    unsigned int index_count;
+    GLenum index_type;
+};
+
+extern GLuint make_buffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage);
+extern GLuint make_quad();
+extern Mesh   make_cube();
+
+#endif // SO_MESH_HEADER_INCLUDE
+#ifdef SO_MESH_IMPLEMENTATION
+
+GLuint make_buffer(GLenum target, GLsizei size, GLvoid *data, GLenum usage)
+{
+    GLuint result = 0;
+    glGenBuffers(1, &result);
+    glBindBuffer(target, result);
+    glBufferData(target, size, data, usage);
+    glBindBuffer(target, 0);
+    return result;
+}
+
 GLuint make_quad()
 {
     GLfloat v[] = {
@@ -67,3 +116,5 @@ Mesh make_cube()
     result.index_type = GL_UNSIGNED_INT;
     return result;
 }
+
+#endif // SO_MESH_IMPLEMENTATION
