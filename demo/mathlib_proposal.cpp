@@ -299,10 +299,24 @@ float m_normalize(Vector<float, n> v)
 }
 
 ///////////////// Linear algebra /////////////////
+
+// return: The skew-symmetric matrix form of the
+//         cross product operator applied by v.
 mat3 m_skew(vec3 v)
 {
     mat3 result = {0, v.z, -v.y, -v.z, 0, v.x, v.y, -v.x, 0};
     return result;
+}
+
+// return: A vector that is orthogonal to v.
+//         Always works if the input is non-zero.
+//         Doesn’t require the input to be normalised.
+//         Doesn’t normalize the output.
+// thanks: http://lolengine.net/blog/2013/09/21/picking-orthogonal-vector-combing-coconuts
+vec3 m_orthogonal(vec3 v)
+{
+    return abs(v.x) > abs(v.z) ? vec3(-v.y, v.x, 0.0)
+                               : vec3(0.0, -v.z, v.y);
 }
 
 ///////////////// GLSL-like stuff ////////////////
@@ -323,16 +337,15 @@ Vector<T, n> m_clamp(Vector<T, n> v, Vector<T, n> low, Vector<T, n> high)
     return result;
 }
 
-float m_map(float t0, float t1,
-            float t,
-            float y0, float y1)
+// return: Linear mapping from [t0, t1] to [y0, y1]
+float m_map(float t0, float t1, float t, float y0, float y1)
 {
     return m_clamp(y0 + (y1 - y0) * (t - t0) / (t1 - t0), y0, y1);
 }
 
-float mixf(float lo,
-           float hi,
-           float t) {
+// return: Linear mapping from [0, 1] to [lo, hi]
+float m_mix(float lo, float hi, float t)
+{
     return lo + (hi - lo) * t;
 }
 
