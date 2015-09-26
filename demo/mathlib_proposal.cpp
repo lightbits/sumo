@@ -101,17 +101,9 @@ vec2 m_vec2(float x, float y)                   { vec2 result = { x, y       }; 
 vec3 m_vec3(float x, float y, float z)          { vec3 result = { x, y, z    }; return result; }
 vec4 m_vec4(float x, float y, float z, float w) { vec4 result = { x, y, z, w }; return result; }
 
-template <typename T, int n>
-Matrix<T, n, n> m_identity_()
-{
-    Matrix<T, n, n> result = { };
-    for (unsigned int i = 0; i < n; i++)
-        result.data[i*n+i] = 1;
-    return result;
-}
-
 template <typename T>
-Matrix<T, 2, 2> m_mat2_(Vector<T, 2> a1, Vector<T, 2> a2)
+Matrix<T, 2, 2> m_mat2_(Vector<T, 2> a1,
+                        Vector<T, 2> a2)
 {
     mat2 result = { };
     result.a1 = a1;
@@ -120,7 +112,9 @@ Matrix<T, 2, 2> m_mat2_(Vector<T, 2> a1, Vector<T, 2> a2)
 }
 
 template <typename T>
-Matrix<T, 3, 3> m_mat3_(Vector<T, 3> a1, Vector<T, 3> a2, Vector<T, 3> a3)
+Matrix<T, 3, 3> m_mat3_(Vector<T, 3> a1,
+                        Vector<T, 3> a2,
+                        Vector<T, 3> a3)
 {
     mat3 result = { };
     result.a1 = a1;
@@ -140,7 +134,10 @@ Matrix<T, 3, 3> m_mat3_(Matrix<T, 4, 4> m)
 }
 
 template <typename T>
-Matrix<T, 4, 4> m_mat4_(Vector<T, 4> a1, Vector<T, 4> a2, Vector<T, 4> a3, Vector<T, 4> a4)
+Matrix<T, 4, 4> m_mat4_(Vector<T, 4> a1,
+                        Vector<T, 4> a2,
+                        Vector<T, 4> a3,
+                        Vector<T, 4> a4)
 {
     mat4 result = { };
     result.a1 = a1;
@@ -186,6 +183,12 @@ Matrix<T, 4, 4> m_mat4_(Matrix<T, 3, 3> m)
 #define m_id4u  m_identity_<unsigned int, 4>
 
 ///////////////// Matrix functions /////////////////
+template <typename T, int r, int c>
+T *m_element(Matrix<T, r, c> *m, int row, int column)
+{
+    return m->data + row + column * r;
+}
+
 template <typename T, int ra, int ca, int cb>
 Matrix<T, ra, cb> operator *(Matrix<T, ra, ca> a,
                              Matrix<T, ca, cb> b)
@@ -219,6 +222,29 @@ Matrix<T, r, c> operator *(T s, Matrix<T, r, c> a)
 {
     Matrix<T, r, c> result = {};
     for (int i = 0; i < r*c; i++) result.data[i] = a.data[i] * s;
+    return result;
+}
+
+template <typename T, int n>
+Matrix<T, n, n> m_identity_()
+{
+    Matrix<T, n, n> result = { };
+    for (unsigned int i = 0; i < n; i++)
+        result.data[i*n+i] = 1;
+    return result;
+}
+
+template <typename T, int r, int c>
+Matrix<T, c, r> m_transpose(Matrix<T, r, c> m)
+{
+    Matrix<T, c, r> result = {};
+    for (int row = 0; row < r; row++)
+    for (int col = 0; col < c; col++)
+    {
+        T *a = m_element(&result, col, row);
+        T *b = m_element(&m, row, col);
+        *a = *b;
+    }
     return result;
 }
 
@@ -369,6 +395,7 @@ int main(int argc, char **argv)
     m_printf(b);
     Matrix<float, 3, 2> c = a * b;
     m_printf(c);
+    m_printf(m_transpose(c));
 
     return 0;
 }
