@@ -5,26 +5,24 @@ typedef Map(GLint) Map_GLint;
 struct RenderPass
 {
     GLuint shader;
-    // GLuint fbo;
-    // GLuint textures[...];
-    // GLenum texture_types[...]
-
     Map_GLint uniforms;
     Map_GLint attribs;
 };
 
-struct RenderPassSource
-{
-    char *vertex_shader;
-    char *fragment_shader;
-    char *geometry_shader;
-    char *tess_ctrl_shader;
-    char *tess_eval_shader;
-    bool from_memory;
-};
+// Create a render pass from pointers to source code in memory
+RenderPass make_render_pass(char *vertex_shader = 0,
+                            char *fragment_shader = 0,
+                            char *geometry_shader = 0,
+                            char *tess_ctrl_shader = 0,
+                            char *tess_eval_shader = 0);
 
-RenderPass make_render_pass(RenderPassSource source);
-void make_render_pass(RenderPass *pass, RenderPassSource source);
+// Load a render pass from filenames of shaders on disk
+RenderPass load_render_pass(char *vertex_shader = 0,
+                            char *fragment_shader = 0,
+                            char *geometry_shader = 0,
+                            char *tess_ctrl_shader = 0,
+                            char *tess_eval_shader = 0);
+
 void begin(RenderPass *pass);
 void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized = false);
 void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool normalized = false);

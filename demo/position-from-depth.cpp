@@ -103,18 +103,8 @@ GLuint quad;
 void init()
 {
     so_make_fbo_rgbad(&gbuf, WINDOW_WIDTH, WINDOW_HEIGHT, GL_RGBA32F);
-
-    RenderPassSource geometry_pass_source = {
-        GEOMETRY_VS, GEOMETRY_FS
-    };
-    geometry_pass_source.from_memory = true;
-    geometry_pass = make_render_pass(geometry_pass_source);
-
-    RenderPassSource reconstruct_pass_source = {
-        RECONSTRUCT_VS, RECONSTRUCT_FS
-    };
-    reconstruct_pass_source.from_memory = true;
-    reconstruct_pass = make_render_pass(reconstruct_pass_source);
+    geometry_pass = make_render_pass(GEOMETRY_VS, GEOMETRY_FS);
+    reconstruct_pass = make_render_pass(RECONSTRUCT_VS, RECONSTRUCT_FS);
 
     cube = make_cube();
     quad = make_quad();

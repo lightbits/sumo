@@ -66,11 +66,7 @@ GLuint make_sdf()
 
 void init()
 {
-    RenderPassSource source1 = {
-        "shaders/splat.vs",
-        "shaders/splat.fs"
-    };
-    pass1 = make_render_pass(source1);
+    pass1 = load_render_pass("shaders/splat.vs", "shaders/splat.fs");
     sdf = make_sdf();
     splat = make_splat();
 }

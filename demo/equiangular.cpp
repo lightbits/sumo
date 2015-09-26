@@ -1,5 +1,6 @@
 /* https://www.solidangle.com/research/egsr2012_volume.pdf */
 #include "sumo.h"
+#include <stdio.h>
 #define WINDOW_WIDTH 512
 #define WINDOW_HEIGHT 512
 #define MULTISAMPLES 0
@@ -11,11 +12,8 @@ GLuint quad;
 
 void init()
 {
-    RenderPassSource source = {
-        "./shaders/equiangular-sampling.vs",
-        "./shaders/equiangular-sampling.fs"
-    };
-    pass = make_render_pass(source);
+    pass = load_render_pass("./shaders/equiangular-sampling.vs",
+                            "./shaders/equiangular-sampling.fs");
     quad = make_quad();
 }
 

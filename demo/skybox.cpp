@@ -51,12 +51,7 @@ GLuint quad;
 
 void init()
 {
-    RenderPassSource source = {
-        SHADER_VS,
-        SHADER_FS
-    };
-    source.from_memory = true;
-    pass = make_render_pass(source);
+    pass = make_render_pass(SHADER_VS, SHADER_FS);
     cube = make_cube();
     skybox = load_cubemap("./assets/uffizi_cross.hdr",
                           CubemapCrossTB,

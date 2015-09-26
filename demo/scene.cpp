@@ -1,4 +1,5 @@
 #include "sumo.h"
+#include <stdio.h>
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
@@ -282,19 +283,9 @@ GLuint scene_make_grid()
 
 void init()
 {
-    RenderPassSource source = {
-        SHADER_VS,
-        SHADER_FS
-    };
-    source.from_memory = true;
-    pass = make_render_pass(source);
+    pass = make_render_pass(SHADER_VS, SHADER_FS);
+    scene_gui_pass = make_render_pass(SCENE_GUI_VS, SCENE_GUI_FS);
 
-    RenderPassSource scene_gui_pass_source = {
-        SCENE_GUI_VS,
-        SCENE_GUI_FS
-    };
-    scene_gui_pass_source.from_memory = true;
-    scene_gui_pass = make_render_pass(scene_gui_pass_source);
     cube = make_cube();
 
     scene = make_scene();

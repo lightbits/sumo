@@ -140,59 +140,60 @@ void attribdiv(char *name, u32 divisor)
     glVertexAttribDivisor(location, divisor);
 }
 
-struct render_pass_source_t
+RenderPass make_render_pass(char *vertex_shader,
+                            char *fragment_shader,
+                            char *geometry_shader,
+                            char *tess_ctrl_shader,
+                            char *tess_eval_shader,
+                            bool from_memory)
 {
-    char *vertex_shader;
-    char *fragment_shader;
-    char *geometry_shader;
-    char *tess_ctrl_shader;
-    char *tess_eval_shader;
-};
-
-void make_render_pass(RenderPass *result, RenderPassSource source)
-{
+    RenderPass result = {};
     char *sources[5];
     GLenum types[5];
     u32 count = 0;
-    if (source.vertex_shader)
+    if (vertex_shader)
     {
-        sources[count] = source.vertex_shader;
+        sources[count] = vertex_shader;
         types[count++] = GL_VERTEX_SHADER;
     }
-    if (source.fragment_shader)
+    if (fragment_shader)
     {
-        sources[count] = source.fragment_shader;
+        sources[count] = fragment_shader;
         types[count++] = GL_FRAGMENT_SHADER;
     }
-    if (source.geometry_shader)
+    if (geometry_shader)
     {
-        sources[count] = source.geometry_shader;
+        sources[count] = geometry_shader;
         types[count++] = GL_GEOMETRY_SHADER;
     }
-    if (source.tess_ctrl_shader)
+    if (tess_ctrl_shader)
     {
-        sources[count] = source.tess_ctrl_shader;
+        sources[count] = tess_ctrl_shader;
         types[count++] = GL_TESS_CONTROL_SHADER;
     }
-    if (source.tess_eval_shader)
+    if (tess_eval_shader)
     {
-        sources[count] = source.tess_eval_shader;
+        sources[count] = tess_eval_shader;
         types[count++] = GL_TESS_EVALUATION_SHADER;
     }
-    so_free_shader(result->shader);
-    map_free(&result->uniforms);
-    map_free(&result->attribs);
-    if (source.from_memory)
-        result->shader = so_load_shader_from_memory(sources, types, count);
+    so_free_shader(result.shader);
+    map_free(&result.uniforms);
+    map_free(&result.attribs);
+    if (from_memory)
+        result.shader = so_load_shader_from_memory(sources, types, count);
     else
-        result->shader = so_load_shader(sources, types, count);
-    map_alloc(&result->uniforms, 128);
-    map_alloc(&result->attribs, 128);
+        result.shader = so_load_shader(sources, types, count);
+    map_alloc(&result.uniforms, 128);
+    map_alloc(&result.attribs, 128);
+    return result;
 }
 
-RenderPass make_render_pass(RenderPassSource source)
+RenderPass make_render_pass(char *vs, char *fs, char *gs, char *tcs, char *tes)
 {
-    RenderPass result = {};
-    make_render_pass(&result, source);
-    return result;
+    return make_render_pass(vs, fs, gs, tcs, tes, true);
+}
+
+RenderPass load_render_pass(char *vs, char *fs, char *gs, char *tcs, char *tes)
+{
+    return make_render_pass(vs, fs, gs, tcs, tes, false);
 }

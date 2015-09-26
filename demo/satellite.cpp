@@ -19,11 +19,7 @@ Satellite sat;
 
 void init()
 {
-    RenderPassSource source = {
-        "./shaders/cube.vs",
-        "./shaders/cube.fs"
-    };
-    make_render_pass(&pass, source);
+    pass = load_render_pass("shaders/cube.vs", "shaders/cube.fs");
     cube = make_cube();
 
     sat.m = 80.0f;

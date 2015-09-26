@@ -119,22 +119,10 @@ vec2 eval(vec2 p)
 
 void init()
 {
-    RenderPassSource source_field = {
-        FIELD_VS,
-        FIELD_FS
-    };
-    source_field.from_memory = true;
-    pass_field = make_render_pass(source_field);
-
-    RenderPassSource source_dye = {
-        DYE_VS,
-        DYE_FS
-    };
-    source_dye.from_memory = true;
-    pass_dye = make_render_pass(source_dye);
+    pass_field = make_render_pass(FIELD_VS, FIELD_FS);
+    pass_dye = make_render_pass(DYE_VS, DYE_FS);
 
     quad = make_quad();
-
     buffer.position = make_buffer(GL_ARRAY_BUFFER,
                                   sizeof(particles.position),
                                   particles.position,

@@ -35,12 +35,7 @@ GLuint quad;
 
 void init()
 {
-    RenderPassSource source = {
-        SHADER_VS,
-        SHADER_FS
-    };
-    source.from_memory = true;
-    pass = make_render_pass(source);
+    pass = make_render_pass(SHADER_VS, SHADER_FS);
     quad = make_quad();
     float c[] = {
         0.00f, 0.63f, 0.69f, 1.0f,

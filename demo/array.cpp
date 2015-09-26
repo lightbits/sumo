@@ -1,10 +1,11 @@
 #include "sumo.h"
+#include <stdio.h>
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
-RenderPass pass1;
+RenderPass pass;
 GLuint vbo;
 
 void init()
@@ -24,13 +25,6 @@ void init()
             printf("%d : %s = %f\n", i, key, *x);
     }
 
-    RenderPassSource pass1_src = {
-        "shaders/hello.vs",
-        "shaders/hello.fs"
-    };
-
-    pass1 = make_render_pass(pass1_src);
-
     float v[] = {
         -1.0f, -1.0f,
         +1.0f, -1.0f,
@@ -40,12 +34,13 @@ void init()
         -1.0f, -1.0f
     };
     vbo = make_buffer(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
+    pass = load_render_pass("shaders/hello.vs", "shaders/hello.fs");
 }
 
 void tick(Input io, float t, float dt)
 {
     clearc(0.35f, 0.55f, 1.0f, 1.0f);
-    begin(&pass1);
+    begin(&pass);
     uniformf("blue_color", sin(t));
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     attribv("position", GL_FLOAT, 2, 2 * sizeof(GLfloat), 0);
