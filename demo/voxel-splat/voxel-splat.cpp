@@ -66,7 +66,8 @@ GLuint make_sdf()
 
 void init()
 {
-    pass1 = load_render_pass("shaders/splat.vs", "shaders/splat.fs");
+    pass1 = load_render_pass("demo/voxel-splat/voxel-splat.vs",
+                             "demo/voxel-splat/voxel-splat.fs");
     sdf = make_sdf();
     splat = make_splat();
 }

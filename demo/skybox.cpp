@@ -53,7 +53,7 @@ void init()
 {
     pass = make_render_pass(SHADER_VS, SHADER_FS);
     cube = make_cube();
-    skybox = load_cubemap("./assets/uffizi_cross.hdr",
+    skybox = load_cubemap("assets/textures/uffizi_cross.hdr",
                           CubemapCrossTB,
                           GL_LINEAR,
                           GL_LINEAR,

@@ -34,7 +34,7 @@ void init()
         -1.0f, -1.0f
     };
     vbo = make_buffer(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
-    pass = load_render_pass("shaders/hello.vs", "shaders/hello.fs");
+    pass = load_render_pass("assets/shaders/hello.vs", "assets/shaders/hello.fs");
 }
 
 void tick(Input io, float t, float dt)

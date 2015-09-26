@@ -52,7 +52,7 @@ void init()
                GL_NEAREST,
                GL_CLAMP_TO_EDGE,
                GL_CLAMP_TO_EDGE);
-    channel1 = so_load_tex2d("./assets/hero_sheet.png", 0, 0,
+    channel1 = so_load_tex2d("assets/textures/hero_sheet.png", 0, 0,
                              GL_NEAREST, GL_NEAREST);
 }
 

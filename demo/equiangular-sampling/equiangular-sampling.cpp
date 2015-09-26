@@ -12,8 +12,8 @@ GLuint quad;
 
 void init()
 {
-    pass = load_render_pass("./shaders/equiangular-sampling.vs",
-                            "./shaders/equiangular-sampling.fs");
+    pass = load_render_pass("demo/equiangular-sampling/equiangular-sampling.vs",
+                            "demo/equiangular-sampling/equiangular-sampling.fs");
     quad = make_quad();
 }
 
