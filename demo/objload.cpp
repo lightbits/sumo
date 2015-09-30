@@ -11,6 +11,10 @@ struct LoadedMesh
     GLuint normals;
     GLuint texcoords;
     GLuint indices;
+
+    // TODO: Store raw buffers for later processing.
+    // i.e. compute bounds.
+
     u32 num_indices;
     u32 num_positions;
     u32 num_normals;
@@ -19,10 +23,26 @@ struct LoadedMesh
 
 LoadedMesh load_mesh(char *name)
 {
+    #if 0
+    if (result.positions) glDeleteBuffers(1, &result.positions);
+    if (result.normals) glDeleteBuffers(1, &result.normals);
+    if (result.texcoords) glDeleteBuffers(1, &result.texcoords);
+    if (result.indices) glDeleteBuffers(1, &result.indices);
+    result.num_indices = 0;
+    result.num_positions = 0;
+    result.num_normals = 0;
+    result.num_texcoords = 0;
+    #endif
+
     // TODO: File not found
     char full_name[256];
     sprintf(full_name, "assets/models/%s.sumo_asset", name);
     FILE *input = fopen(full_name, "rb");
+    if (!input)
+    {
+        printf("Failed to load mesh: %s does not exist.\n", full_name);
+        exit(-1);
+    }
     fseek(input, 0, SEEK_END);
     long size = ftell(input);
     rewind(input);
@@ -43,25 +63,6 @@ LoadedMesh load_mesh(char *name)
 
     printf("Positions: %d\nNormals: %d\nTexcoords: %d\nIndices: %d\n",
            npositions / 3, nnormals / 3, ntexcoords / 2, nindices);
-
-    // int i = 0;
-    // while (i < npositions)
-    // {
-    //     printf("%.2f ", positions[i++]);
-    //     printf("%.2f ", positions[i++]);
-    //     printf("%.2f\n", positions[i++]);
-    // }
-
-    // i = 0;
-    // while (i < nindices)
-    // {
-    //     printf("%d ", indices[i++]);
-    //     printf("%d ", indices[i++]);
-    //     printf("%d ", indices[i++]);
-    //     printf("%d ", indices[i++]);
-    //     printf("%d ", indices[i++]);
-    //     printf("%d\n", indices[i++]);
-    // }
 
     LoadedMesh result = {};
     result.num_positions = npositions;
@@ -86,6 +87,8 @@ LoadedMesh load_mesh(char *name)
         result.indices = make_buffer(GL_ELEMENT_ARRAY_BUFFER,
                                      result.num_indices * sizeof(GLuint),
                                      indices, GL_STATIC_DRAW);
+
+    delete[] data;
     return result;
 }
 
@@ -94,7 +97,7 @@ RenderPass pass;
 
 void init()
 {
-    mitsuba = load_mesh("wt_teapot");
+    mitsuba = load_mesh("mitsuba");
     pass = load_render_pass("assets/shaders/default.vs",
                             "assets/shaders/default.fs");
 }
@@ -102,15 +105,15 @@ void init()
 void tick(Input io, float t, float dt)
 {
     mat4 model = mat_scale(1.0f);
-    // mat4 view = mat_translate(0.0f, 0.0f, -4.0f) *
-    //             mat_rotate_x(0.3f) *
-    //             mat_rotate_y(0.4f);
-    mat4 view = camera_holdclick(io, dt);
+    mat4 view = mat_translate(0.0f, -1.0f, -4.0f) *
+                mat_rotate_x(0.3f) *
+                mat_rotate_y(0.4f);
+    // mat4 view = camera_holdclick(io, dt);
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
 
     depth_test(true, GL_LEQUAL);
     depth_write(true);
-    clear(0.0f, 0.1f, 0.2f, 1.0f, 1.0f);
+    clear(0.95f, 0.97f, 1.0f, 1.0f, 1.0f);
     begin(&pass);
     uniformf("projection", projection);
     uniformf("view", view);

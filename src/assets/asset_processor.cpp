@@ -60,6 +60,8 @@ void export_obj(char *name, // does not include .obj
         exit(-1);
     }
 
+    printf("Exporting %s\n", name);
+
     size_t npositions = 0;
     size_t nnormals = 0;
     size_t ntexcoords = 0;
@@ -92,8 +94,10 @@ void export_obj(char *name, // does not include .obj
             write_bytes(&indices, (char*)&index, sizeof(unsigned int));
         }
         index_offset += mesh.positions.size();
-        // write_bytes(&indices,   (char*)&mesh.indices[0],    sizeof(unsigned int) * mesh.indices.size());
     }
+
+    printf("%d positions\n%d normals\n%d texcoords\n%d indices\n\n",
+           npositions / 3, nnormals / 3, ntexcoords / 2, nindices);
 
     char output_name[256];
     sprintf(output_name, "%s.sumo_asset", name);
@@ -127,6 +131,7 @@ void export_obj(char *name, // does not include .obj
 
 int main(int argc, char **argv)
 {
+    export_obj("assets/models/mitsuba", "assets/models/");
     export_obj("assets/models/wt_teapot", "assets/models/");
     export_obj("assets/models/cornell_box", "assets/models/");
 

@@ -13,6 +13,14 @@ Todo
  * stb_truetype
  * #include in shader
  * Easy uniform manipulation using imgui and in-shader parameter declaration
+ * Default good-looking pipeline
+    - Sky shader (procedural)
+    - Cubemap env. map
+    - PBS materials loaded from standardized mesh format
+    - Compute bounding boxes of loaded mesh
+    - Compute maximum bounds (normalization factor)
+    - Mean model bound (also a normalization factor)
+    - Compute centroid
  * SIMD particles
     * http://i-saint.hatenablog.com/entry/2015/05/26/212441
  * SIMD noise
