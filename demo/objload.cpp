@@ -1,39 +1,36 @@
 #include "sumo.h"
+#define SO_ASSET_IMPLEMENTATION
+#include "so_asset.h"
 #include <stdio.h>
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
-struct LoadedMesh
+struct so_LoadedMesh
 {
     GLuint positions;
     GLuint normals;
-    GLuint texcoords;
+    GLuint texels;
     GLuint indices;
 
-    // TODO: Store raw buffers for later processing.
-    // i.e. compute bounds.
+    struct Buffer
+    {
+        u08 *data;
+        r32 *positions;
+        r32 *normals;
+        r32 *texels;
+        u32 *indices;
+    } buffer;
 
-    u32 num_indices;
     u32 num_positions;
     u32 num_normals;
-    u32 num_texcoords;
+    u32 num_texels;
+    u32 num_indices;
 };
 
-LoadedMesh load_mesh(char *name)
+so_LoadedMesh load_mesh(char *name)
 {
-    #if 0
-    if (result.positions) glDeleteBuffers(1, &result.positions);
-    if (result.normals) glDeleteBuffers(1, &result.normals);
-    if (result.texcoords) glDeleteBuffers(1, &result.texcoords);
-    if (result.indices) glDeleteBuffers(1, &result.indices);
-    result.num_indices = 0;
-    result.num_positions = 0;
-    result.num_normals = 0;
-    result.num_texcoords = 0;
-    #endif
-
     // TODO: File not found
     char full_name[256];
     sprintf(full_name, "assets/models/%s/%s.sumo_asset", name, name);
@@ -46,53 +43,52 @@ LoadedMesh load_mesh(char *name)
     fseek(input, 0, SEEK_END);
     long size = ftell(input);
     rewind(input);
-    char *data = new char[size];
+    u08 *data = new u08[size];
     fread(data, 1, size, input);
-
-    // Yuck!
-    int *header = (int*)data;
-    int npositions = header[0];
-    int nnormals = header[1];
-    int ntexcoords = header[2];
-    int nindices = header[3];
-    GLfloat *positions = (GLfloat*)(data + sizeof(int) * 4);
-    GLfloat *normals   = (GLfloat*)(data + sizeof(int) * 4 + npositions * sizeof(GLfloat));
-    GLfloat *texcoords = (GLfloat*)(data + sizeof(int) * 4 + npositions * sizeof(GLfloat) + nnormals * sizeof(GLfloat));
-    GLuint  *indices   = (GLuint*) (data + sizeof(int) * 4 + npositions * sizeof(GLfloat) + nnormals * sizeof(GLfloat) + ntexcoords * sizeof(GLfloat));
     fclose(input);
 
-    printf("Positions: %d\nNormals: %d\nTexcoords: %d\nIndices: %d\n",
-           npositions / 3, nnormals / 3, ntexcoords / 2, nindices);
+    so_LoadedMesh result = {};
+    result.buffer.data = data;
+    so_read_mesh_from_memory(data,
+        &result.buffer.positions,
+        &result.buffer.normals,
+        &result.buffer.texels,
+        &result.buffer.indices,
+        &result.num_positions,
+        &result.num_normals,
+        &result.num_texels,
+        &result.num_indices);
 
-    LoadedMesh result = {};
-    result.num_positions = npositions;
-    result.num_normals = nnormals;
-    result.num_texcoords = ntexcoords;
-    result.num_indices = nindices;
+    printf("Positions: %d\nNormals: %d\ntexels: %d\nIndices: %d\n",
+           result.num_positions / 3,
+           result.num_normals / 3,
+           result.num_texels / 2,
+           result.num_indices);
+
     result.positions = make_buffer(GL_ARRAY_BUFFER,
                                    result.num_positions * sizeof(GLfloat),
-                                   positions, GL_STATIC_DRAW);
+                                   result.buffer.positions, GL_STATIC_DRAW);
 
     if (result.num_normals)
         result.normals = make_buffer(GL_ARRAY_BUFFER,
                                      result.num_normals * sizeof(GLfloat),
-                                     normals, GL_STATIC_DRAW);
+                                     result.buffer.normals, GL_STATIC_DRAW);
 
-    if (result.num_texcoords)
-        result.texcoords = make_buffer(GL_ARRAY_BUFFER,
-                                       result.num_texcoords * sizeof(GLfloat),
-                                       texcoords, GL_STATIC_DRAW);
+    if (result.num_texels)
+        result.texels = make_buffer(GL_ARRAY_BUFFER,
+                                       result.num_texels * sizeof(GLfloat),
+                                       result.buffer.texels, GL_STATIC_DRAW);
 
     if (result.num_indices)
         result.indices = make_buffer(GL_ELEMENT_ARRAY_BUFFER,
                                      result.num_indices * sizeof(GLuint),
-                                     indices, GL_STATIC_DRAW);
+                                     result.buffer.indices, GL_STATIC_DRAW);
 
     delete[] data;
     return result;
 }
 
-LoadedMesh mitsuba;
+so_LoadedMesh mitsuba;
 RenderPass pass;
 
 void init()
@@ -125,9 +121,9 @@ void tick(Input io, float t, float dt)
         glBindBuffer(GL_ARRAY_BUFFER, mitsuba.normals);
         attribfv("normal", 3, 3, 0);
     }
-    if (mitsuba.texcoords)
+    if (mitsuba.texels)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, mitsuba.texcoords);
+        glBindBuffer(GL_ARRAY_BUFFER, mitsuba.texels);
         attribfv("texcoord", 2, 2, 0);
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mitsuba.indices);
