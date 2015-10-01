@@ -8,3 +8,4 @@ build/*.obj
 *.manifest
 *.sublime-project
 *.sublime-workspace
+assets/3rdparty

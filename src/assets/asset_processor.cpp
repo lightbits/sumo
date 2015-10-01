@@ -131,9 +131,8 @@ void export_obj(char *name, // does not include .obj
 
 int main(int argc, char **argv)
 {
-    export_obj("assets/models/mitsuba", "assets/models/");
-    export_obj("assets/models/wt_teapot", "assets/models/");
-    export_obj("assets/models/cornell_box", "assets/models/");
+    export_obj("assets/models/mitsuba/mitsuba", "assets/models/mitsuba/");
+    export_obj("assets/models/teapot/teapot", "assets/models/teapot/");
 
 #if 0
     FILE *input = fopen("assets/models/cornell_box.sumo_asset", "rb");

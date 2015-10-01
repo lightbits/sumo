@@ -36,7 +36,7 @@ LoadedMesh load_mesh(char *name)
 
     // TODO: File not found
     char full_name[256];
-    sprintf(full_name, "assets/models/%s.sumo_asset", name);
+    sprintf(full_name, "assets/models/%s/%s.sumo_asset", name, name);
     FILE *input = fopen(full_name, "rb");
     if (!input)
     {
