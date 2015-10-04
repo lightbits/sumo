@@ -7,8 +7,8 @@
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define GLSL150(src) "#version 150\n" #src
-#define CPCF_Width 512
-#define CPCF_Height 512
+#define CPCF_Width  128
+#define CPCF_Height 128
 #define CPCF_Seeds 3
 #define global_var static
 char *SDF_VS = GLSL150(
@@ -34,7 +34,9 @@ void main()
     float width = 0.005;
     float stripe = smoothstep(1.0 - width/seperation, 1.0, modulator) +
                    1.0 - smoothstep(0.0, width/seperation, modulator);
-    color = vec4(0.08, 0.17, 0.36, 1.0);
+    color = vec4(1, 0.38, 0.22, 1.0) *
+            vec4(0.5 + 0.5 * closest.x, 1.0,
+                 0.5 + 0.5 * closest.y, 1.0);
     color = mix(color, 4.0*color, stripe);
 }
 );
@@ -127,18 +129,16 @@ void tick(Input io, float t, float dt)
     uniformi("channel", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    // ImGui::NewFrame();
-    // persist float lightColor[4];
-    // persist float attenuation;
-    // const ImGuiWindowFlags layout_flags = ImGuiWindowFlags_NoTitleBar |
-    //                                       ImGuiWindowFlags_NoResize   |
-    //                                       ImGuiWindowFlags_NoMove;
-    // ImGui::Begin("Main", 0, ImVec2(WINDOW_WIDTH, WINDOW_HEIGHT), 0.0f, layout_flags);
-    // char text[255];
-    // sprintf(text, "Pos: %d %d\nVal: %.2f %.2f", xi, yi, q.x, q.y);
-    // ImGui::SetTooltip(text);
-    // ImGui::End();
-    // ImGui::Render();
+    ImGui::NewFrame();
+    const ImGuiWindowFlags layout_flags = ImGuiWindowFlags_NoTitleBar |
+                                          ImGuiWindowFlags_NoResize   |
+                                          ImGuiWindowFlags_NoMove;
+    ImGui::Begin("Main", 0, ImVec2(WINDOW_WIDTH, WINDOW_HEIGHT), 0.0f, layout_flags);
+    char text[255];
+    sprintf(text, "Pos: %d %d\nVal: %.2f %.2f", xi, yi, q.x, q.y);
+    ImGui::SetTooltip(text);
+    ImGui::End();
+    ImGui::Render();
 }
 
 #include "sumo.cpp"
