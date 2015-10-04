@@ -1,5 +1,16 @@
 // http://github.prideout.net/coordinate-fields/
 
+// TODO: Investigate the effect of linearizing the distance field
+// texture. e.g. can we render low res SDF and upscale with GL_LINEAR
+// with good results?
+
+// Using GL_LINEAR on the CPCF texture looks weird because you are
+// "blending" two closest points.
+
+// TODO: Easier way to debug draw RT textures
+// TODO: Easier way to use RT and get color values at a given pixel
+// from the RT
+
 #include "sumo.h"
 #include <stdio.h>
 #define WINDOW_WIDTH 512
@@ -7,8 +18,8 @@
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define GLSL150(src) "#version 150\n" #src
-#define CPCF_Width  128
-#define CPCF_Height 128
+#define CPCF_Width  512
+#define CPCF_Height 512
 #define CPCF_Seeds 3
 #define global_var static
 char *SDF_VS = GLSL150(
@@ -24,20 +35,29 @@ void main()
 char *SDF_FS = GLSL150(
 in vec2 texel;
 uniform sampler2D channel;
+uniform int mode;
 out vec4 color;
 void main()
 {
-    vec2 closest = texture(channel, texel).rg;
-    float dist = length(texel - closest);
-    float seperation = 0.05;
-    float modulator = mod(dist / seperation, 1.0);
-    float width = 0.005;
-    float stripe = smoothstep(1.0 - width/seperation, 1.0, modulator) +
-                   1.0 - smoothstep(0.0, width/seperation, modulator);
-    color = vec4(1, 0.38, 0.22, 1.0) *
-            vec4(0.5 + 0.5 * closest.x, 1.0,
-                 0.5 + 0.5 * closest.y, 1.0);
-    color = mix(color, 4.0*color, stripe);
+    if (mode == 0)
+    {
+        color = texture(channel, texel);
+    }
+    else if (mode == 1)
+    {
+        vec2 closest = texture(channel, texel).rg;
+        vec2 p = texel;
+        float dist = length(p - closest);
+        float seperation = 0.2;
+        float modulator = mod(dist / seperation, 1.0);
+        float width = 0.005;
+        float stripe = smoothstep(1.0 - width/seperation, 1.0, modulator) +
+                       1.0 - smoothstep(0.0, width/seperation, modulator);
+        color = vec4(1, 0.38, 0.22, 1.0) *
+                vec4(0.5 + 0.5 * closest.x, 1.0,
+                     0.5 + 0.5 * closest.y, 1.0);
+        color = mix(color, 4.0*color, stripe);
+    }
 }
 );
 
@@ -54,18 +74,31 @@ global_var CPCF cpcf;
 
 vec2 compute_d(vec2 *seeds, u32 num_seeds, vec2 p)
 {
-    u32 i_min = 0;
-    r32 d_min = length(p - seeds[i_min]);
-    for (u32 i = 1; i < num_seeds; i++)
+    vec2 s_min = seeds[0];
+    r32 d_min = length(p - s_min);
+    for (u32 i = 0; i < num_seeds; i++)
     {
-        r32 d = length(p - seeds[i]);
+        vec2 s = seeds[i];
+        r32 d = length(p - s);
         if (d < d_min)
         {
-            i_min = i;
+            s_min = s;
+            d_min = d;
+        }
+
+        // Each seed also has a circle of points, at
+        // a radius of r away from the seed.
+        r32 r = 0.2f;
+        s = s + normalize(p - s) * r; // The closest point on the circle
+        d = length(p - s);
+        if (d < d_min)
+        {
+            s_min = s;
             d_min = d;
         }
     }
-    return seeds[i_min];
+
+    return s_min;
 }
 
 void compute_cpcf(vec2 *seeds, vec2 *result,
@@ -85,13 +118,10 @@ void init()
     pass = make_render_pass(SDF_VS, SDF_FS);
     quad = make_quad();
 
-    cpcf.seeds[0] = vec2(0.25f, 0.75f);
-    cpcf.seeds[1] = vec2(0.75f, 0.25f);
-    cpcf.seeds[2] = vec2(0.8f, 0.9f);
-
-    compute_cpcf(cpcf.seeds, cpcf.field,
-                 CPCF_Width, CPCF_Height, CPCF_Seeds);
-
+    cpcf.seeds[0] = vec2(0.25f, 0.45f);
+    cpcf.seeds[1] = vec2(0.5f, 0.5f);
+    cpcf.seeds[2] = vec2(0.8f, 0.8f);
+    compute_cpcf(cpcf.seeds, cpcf.field, CPCF_Width, CPCF_Height, CPCF_Seeds);
     cpcf.tex = so_make_tex2d(cpcf.field, CPCF_Width, CPCF_Height,
                              GL_RG32F, GL_RG, GL_FLOAT,
                              GL_NEAREST, GL_NEAREST,
@@ -111,34 +141,16 @@ r32 m_round(r32 x)
 void tick(Input io, float t, float dt)
 {
     clearc(0.35f, 0.55f, 1.0f, 1.0f);
-
-    s32 xi = (s32)m_round(CPCF_Width * (io.mouse.pos.x / WINDOW_WIDTH));
-    s32 yi = (s32)m_round(CPCF_Height * (io.mouse.pos.y / WINDOW_HEIGHT));
-    if (xi < 0) xi = 0;
-    if (xi >= CPCF_Width) xi = CPCF_Width - 1;
-    if (yi < 0) yi = 0;
-    if (yi >= CPCF_Height) yi = CPCF_Height - 1;
-    s32 i = (yi * CPCF_Width + xi);
-    vec2 q = cpcf.field[i];
-
     begin(&pass);
     uniformi("channel", 0);
     glBindTexture(GL_TEXTURE_2D, cpcf.tex);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("position", 2, 2, 0);
     uniformi("channel", 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    if (io.key.down['a']) uniformi("mode", 1);
+    else uniformi("mode", 0);
 
-    ImGui::NewFrame();
-    const ImGuiWindowFlags layout_flags = ImGuiWindowFlags_NoTitleBar |
-                                          ImGuiWindowFlags_NoResize   |
-                                          ImGuiWindowFlags_NoMove;
-    ImGui::Begin("Main", 0, ImVec2(WINDOW_WIDTH, WINDOW_HEIGHT), 0.0f, layout_flags);
-    char text[255];
-    sprintf(text, "Pos: %d %d\nVal: %.2f %.2f", xi, yi, q.x, q.y);
-    ImGui::SetTooltip(text);
-    ImGui::End();
-    ImGui::Render();
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 #include "sumo.cpp"
