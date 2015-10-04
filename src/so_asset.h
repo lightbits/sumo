@@ -1,6 +1,33 @@
 #ifndef SO_ASSET_HEADER_INCLUDE
 #define SO_ASSET_HEADER_INCLUDE
 
+struct so_MeshAsset
+{
+    struct so_MaterialAsset
+    {
+        float ambient[3];
+        float diffuse[3];
+        float specular[3];
+        float transmittance[3];
+        float emission[3];
+        float shininess;
+        float ior;
+        float dissolve;
+        int illum;
+    };
+
+    char *data;
+
+    float *positions;
+    float *normals;
+    float *texels;
+    unsigned int *indices;
+    unsigned int *material_ids;
+
+    so_MaterialAsset *materials;
+    unsigned int num_materials;
+};
+
 extern void
 so_read_mesh_from_memory(void          *data,
                          float        **out_positions,
