@@ -42,6 +42,10 @@ at the end of your prototyping app.
 #define WINDOW_FLAGS 0
 #endif
 
+#ifndef WINDOW_HIDE_CURSOR
+#define WINDOW_HIDE_CURSOR 0
+#endif
+
 #ifndef MULTISAMPLES
 #define MULTISAMPLES 0
 #endif
@@ -206,6 +210,9 @@ int main(int argc, char **argv)
         WINDOW_WIDTH, WINDOW_HEIGHT,
         SDL_WINDOW_OPENGL | WINDOW_FLAGS);
     check(window, "Failed to create window");
+
+    if (WINDOW_HIDE_CURSOR)
+        SDL_ShowCursor(0);
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
     check(context, "Failed to create context");

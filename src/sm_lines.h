@@ -41,7 +41,7 @@ static char *SHADER_LINE_BATCH_FS =
     "    outColor = vColor; \n"
     "}                      \n";
 
-#define LINE_BATCH_MAX_IN_BUFFER 256
+#define LINES_VERTICES_PER_BATCH 1024
 struct lines_Vertex { vec2 p; vec4 c; };
 struct lines_Batch
 {
@@ -50,7 +50,7 @@ struct lines_Batch
     GLuint a_position;
     GLuint a_color;
     GLuint u_scale;
-    lines_Vertex vertices[LINE_BATCH_MAX_IN_BUFFER];
+    lines_Vertex vertices[LINES_VERTICES_PER_BATCH];
     u32 vertex_count;
     vec2 scale;
     vec4 color;
@@ -90,7 +90,7 @@ void lines_init()
 {
     glGenBuffers(1, &lines_batch.vbo);
     glBindBuffer(GL_ARRAY_BUFFER, lines_batch.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(lines_Vertex) * LINE_BATCH_MAX_IN_BUFFER, 0, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lines_Vertex) * LINES_VERTICES_PER_BATCH, 0, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     lines_batch.scale = vec2(1.0f, 1.0f);
     lines_batch.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -118,7 +118,7 @@ void lines_draw()
     glEnableVertexAttribArray(lines_batch.a_color);
     glVertexAttribPointer(lines_batch.a_color, 4, GL_FLOAT,
                           GL_FALSE, sizeof(lines_Vertex),
-                          (const GLvoid*)(8));
+                          (const GLvoid*)(2*sizeof(GLfloat)));
 
     glUniform2f(lines_batch.u_scale, lines_batch.scale.x, lines_batch.scale.y);
     glDrawArrays(GL_LINES, 0, lines_batch.vertex_count);
@@ -131,13 +131,16 @@ void lines_draw()
 
 void lines_flush()
 {
-    lines_draw();
-    lines_batch.vertex_count = 0;
+    if (lines_batch.vertex_count > 0)
+    {
+        lines_draw();
+        lines_batch.vertex_count = 0;
+    }
 }
 
 void lines_add_point(vec2 p)
 {
-    if (lines_batch.vertex_count == LINE_BATCH_MAX_IN_BUFFER)
+    if (lines_batch.vertex_count + 1 > LINES_VERTICES_PER_BATCH)
         lines_flush();
     lines_Vertex v = { };
     v.p = p;
@@ -147,6 +150,8 @@ void lines_add_point(vec2 p)
 
 void lines_add_line(vec2 a, vec2 b)
 {
+    if (lines_batch.vertex_count + 2 > LINES_VERTICES_PER_BATCH)
+        lines_flush();
     lines_add_point(a);
     lines_add_point(b);
 }
