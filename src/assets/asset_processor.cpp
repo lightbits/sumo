@@ -146,7 +146,8 @@ int main(int argc, char **argv)
 {
     // export_obj("assets/models/mitsuba/mitsuba", "assets/models/mitsuba/");
     // export_obj("assets/3rdparty/noodles/noodles", "assets/3rdparty/noodles/");
-    export_obj("assets/models/teapot/teapot", "assets/models/teapot/");
+    export_obj("assets/models/sdftest/sdftest", "assets/models/sdftest/");
+    // export_obj("assets/models/teapot/teapot", "assets/models/teapot/");
 
     return 0;
 }
