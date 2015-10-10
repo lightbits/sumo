@@ -3,9 +3,10 @@
 
 void lines_set_width(float w);
 void lines_set_scale(float s);
+void lines_set_scale(float x, float y);
+void lines_set_color(u32  color);
 void lines_set_color(vec4 color);
 void lines_init     ();
-void lines_draw     ();
 void lines_flush    ();
 void lines_add_point(vec2 p);
 void lines_add_line (vec2 a, vec2 b);
@@ -22,7 +23,7 @@ static char *SHADER_LINE_BATCH_VS =
     "#version 150                                \n"
     "in vec2 position;                           \n"
     "in vec4 color;                              \n"
-    "uniform float scale;                        \n"
+    "uniform vec2 scale;                         \n"
     "out vec4 vColor;                            \n"
     "void main()                                 \n"
     "{                                           \n"
@@ -51,7 +52,7 @@ struct lines_Batch
     GLuint u_scale;
     lines_Vertex vertices[LINE_BATCH_MAX_IN_BUFFER];
     u32 vertex_count;
-    r32 scale;
+    vec2 scale;
     vec4 color;
 };
 
@@ -64,7 +65,20 @@ void lines_set_width(float w)
 
 void lines_set_scale(float s)
 {
-    lines_batch.scale = s;
+    lines_batch.scale = vec2(s, s);
+}
+
+void lines_set_scale(float x, float y)
+{
+    lines_batch.scale = vec2(x, y);
+}
+
+void lines_set_color(u32 color)
+{
+    lines_batch.color.x = ((color >> 24) & 0xFF) / 255.0f;
+    lines_batch.color.y = ((color >> 16) & 0xFF) / 255.0f;
+    lines_batch.color.z = ((color >>  8) & 0xFF) / 255.0f;
+    lines_batch.color.w = ((color >>  0) & 0xFF) / 255.0f;
 }
 
 void lines_set_color(vec4 color)
@@ -78,7 +92,7 @@ void lines_init()
     glBindBuffer(GL_ARRAY_BUFFER, lines_batch.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(lines_Vertex) * LINE_BATCH_MAX_IN_BUFFER, 0, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    lines_batch.scale = 1.0f;
+    lines_batch.scale = vec2(1.0f, 1.0f);
     lines_batch.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
     lines_batch.vertex_count = 0;
 
@@ -106,7 +120,7 @@ void lines_draw()
                           GL_FALSE, sizeof(lines_Vertex),
                           (const GLvoid*)(8));
 
-    glUniform1f(lines_batch.u_scale, lines_batch.scale);
+    glUniform2f(lines_batch.u_scale, lines_batch.scale.x, lines_batch.scale.y);
     glDrawArrays(GL_LINES, 0, lines_batch.vertex_count);
 
     glDisableVertexAttribArray(lines_batch.a_position);
