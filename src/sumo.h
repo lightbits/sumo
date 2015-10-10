@@ -14,12 +14,13 @@ typedef int32_t     s32;
 typedef int16_t     s16;
 typedef int8_t      s08;
 
-#define SDL_ASSERT_LEVEL 2
 #include "opengl/gl_core_4_3.h"
+
+#define SDL_ASSERT_LEVEL 2
 #include "SDL.h"
 
-#define ASSERT SDL_assert
 #include "SDL_assert.h"
+#define ASSERT SDL_assert
 
 #ifdef SUMO_DEBUG
 struct DebugCounter
@@ -73,7 +74,6 @@ struct TimedBlock
 #include "so_map.h"
 #include "so_mesh.h"
 #include "imgui/imgui.h"
-#include "pass.h"
 
 typedef Map(r32) Map_r32;
 typedef Map(u32) Map_u32;
@@ -173,8 +173,6 @@ struct Input
     } mouse;
 };
 
-mat4 camera_holdclick(Input io, float dt, float move_speed = 1.0f);
-
 enum CubemapFormat
 {
     CubemapCrossLR,
@@ -190,5 +188,10 @@ GLuint load_cubemap(char *path,
                     GLenum internal_format,
                     GLenum data_type,
                     GLenum data_format);
+
+// Include Sumo APIs
+#include "sm_pass.h"
+#include "sm_camera.h"
+#include "sm_lines.h"
 
 #endif

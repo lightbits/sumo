@@ -94,12 +94,19 @@ at the end of your prototyping app.
 #define SO_MESH_IMPLEMENTATION
 #include "so_mesh.h"
 
+#define SM_PASS_IMPLEMENTATION
+#include "sm_pass.h"
+
+#define SM_CAMERA_IMPLEMENTATION
+#include "sm_camera.h"
+
+#define SM_LINES_IMPLEMENTATION
+#include "sm_lines.h"
+
 #include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
-#include "pass.cpp"
 #include "cubemap.cpp"
-#include "camera.cpp"
 
 // As mentioned, here we take advantage of single
 // compilation unit mode to get the number of counters

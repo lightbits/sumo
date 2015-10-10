@@ -2,6 +2,9 @@
 
 Changelog
 =========
+5. october 2015
+    cross, sign
+
 24. september 2015
     smoothstep
 
@@ -137,6 +140,13 @@ vec3 &operator *=(vec3 &a, vec3 b)  { a = a * b; return a; }
 vec3 &operator *=(vec3 &a, float s) { a = a * s; return a; }
 vec3 &operator +=(vec3 &a, vec3 b)  { a = a + b; return a; }
 vec3 &operator -=(vec3 &a, vec3 b)  { a = a - b; return a; }
+
+vec3 cross(vec3 a, vec3 b)
+{
+    return vec3(a.y*b.z - a.z*b.y,
+                a.z*b.x - a.x*b.z,
+                a.x*b.y - a.y*b.x);
+}
 
 ///////////// vec4
 
@@ -392,6 +402,17 @@ length(vec4 a)
 {
     float result = sqrt(dot(a, a));
     return result;
+}
+
+float
+sign(float x)
+{
+    if (x > 0.0f)
+        return +1.0f;
+    else if (x < 0.0f)
+        return -1.0f;
+    else
+        return 0.0f;
 }
 
 vec2
