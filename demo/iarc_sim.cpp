@@ -14,6 +14,7 @@ struct Robot
     float last_reverse;
 };
 
+#define OBSTACLE_PATROL_RADIUS 5.0f
 #define NUM_TARGETS 10
 #define NUM_OBSTACLES 4
 #define NUM_REALIZATIONS 256
@@ -64,18 +65,26 @@ void draw_targets(Robot *targets)
 
 void init_realizations()
 {
-    float dt = TWO_PI / NUM_TARGETS;
     for (u32 r = 0; r < NUM_REALIZATIONS; r++)
     {
         Robot *targets = realizations[r].targets;
         for (u32 i = 0; i < NUM_TARGETS; i++)
         {
-            float theta = i * dt;
+            float theta = (float)i * (TWO_PI / NUM_TARGETS);
             targets[i].position = vec2(cos(theta), sin(theta));
             targets[i].angle = theta;
             targets[i].speed = 0.33f;
             targets[i].last_noise = 0.0f;
             targets[i].last_reverse = 0.0f;
+        }
+
+        Robot *obstacles = realizations[r].obstacles;
+        for (u32 i = 0; i < NUM_OBSTACLES; i++)
+        {
+            float theta = (float)i * (TWO_PI / NUM_OBSTACLES);
+            obstacles[i].position = vec2(cos(theta), sin(theta));
+            obstacles[i].angle = theta;
+            obstacles[i].speed = 0.33f;
         }
     }
 }
@@ -91,7 +100,7 @@ void init()
     hunter.observe_radius = 0.5f;
 }
 
-void update_targets(Robot *targets, Input io, float t, float dt)
+void update_targets(Robot *targets, float t, float dt)
 {
     for (u32 i = 0; i < NUM_TARGETS; i++)
     {
@@ -126,6 +135,19 @@ void update_targets(Robot *targets, Input io, float t, float dt)
         if (target->angle < 0.0f) target->angle += TWO_PI;
         vec2 v = vec2(cos(target->angle), sin(target->angle)) * target->speed;
         target->position += v * dt;
+    }
+}
+
+void update_obstacles(Robot *obstacles, float t, float dt)
+{
+    for (u32 i = 0; i < NUM_OBSTACLES; i++)
+    {
+        Robot *obs = obstacles + i;
+        float dpsi = obs->speed / OBSTACLE_PATROL_RADIUS;
+        float psi = atan2(obs->position.y, obs->position.x);
+        psi += dpsi * dt;
+        obs->position.x = OBSTACLE_PATROL_RADIUS * cos(psi);
+        obs->position.y = OBSTACLE_PATROL_RADIUS * sin(psi);
     }
 }
 
@@ -225,7 +247,10 @@ void tick(Input io, float t, float dt)
 
     Robot *true_targets = realizations[0].targets;
     for (u32 i = 0; i < NUM_REALIZATIONS; i++)
-        update_targets(realizations[i].targets, io, t, dt);
+    {
+        update_targets(realizations[i].targets, t, dt);
+        update_obstacles(realizations[i].obstacles, t, dt);
+    }
 
     Robot mean_targets[NUM_TARGETS] = {};
     for (u32 i = 0; i < NUM_TARGETS; i++)
