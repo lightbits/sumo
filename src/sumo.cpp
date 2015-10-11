@@ -267,7 +267,15 @@ int main(int argc, char **argv)
                     if (event.key.keysym.sym == SDLK_ESCAPE)
                         running = 0;
                     if (event.key.keysym.sym == SDLK_r)
+                    {
                         init();
+
+                        // Reset time
+                        initial_tick = get_tick();
+                        last_frame_t = initial_tick;
+                        elapsed_time = 0.0f;
+                        delta_time = FRAME_TIME;
+                    }
                     if (event.key.keysym.sym == SDLK_PRINTSCREEN)
                         take_screenshot(window);
                     break;

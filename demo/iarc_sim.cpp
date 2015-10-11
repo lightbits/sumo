@@ -16,7 +16,7 @@ struct Robot
 
 #define NUM_TARGETS 10
 #define NUM_OBSTACLES 4
-#define NUM_REALIZATIONS 128
+#define NUM_REALIZATIONS 256
 struct Realization
 {
     Robot targets[NUM_TARGETS];
@@ -70,10 +70,12 @@ void init_realizations()
         Robot *targets = realizations[r].targets;
         for (u32 i = 0; i < NUM_TARGETS; i++)
         {
-            float t = i * dt;
-            targets[i].position = vec2(cos(t), sin(t));
-            targets[i].angle = t;
+            float theta = i * dt;
+            targets[i].position = vec2(cos(theta), sin(theta));
+            targets[i].angle = theta;
             targets[i].speed = 0.33f;
+            targets[i].last_noise = 0.0f;
+            targets[i].last_reverse = 0.0f;
         }
     }
 }
@@ -120,7 +122,7 @@ void update_targets(Robot *targets, Input io, float t, float dt)
             target->last_noise = t;
             target->angle += (-1.0f + 2.0f * frand()) * 20.0f * PI / 180.0f;
         }
-        if (target->angle >= TWO_PI) target->angle -= TWO_PI;
+        if (target->angle > TWO_PI) target->angle -= TWO_PI;
         if (target->angle < 0.0f) target->angle += TWO_PI;
         vec2 v = vec2(cos(target->angle), sin(target->angle)) * target->speed;
         target->position += v * dt;
@@ -162,11 +164,64 @@ void update_hunter(Robot *mean_targets, Robot *true_targets, float t, float dt)
     }
 }
 
+s32 mod(s32 x, s32 r)
+{
+    x = x % r;
+    if (x < 0) return x + r;
+    return x;
+}
+
+void draw_histogram(float *samples, u32 sample_count, vec2 position, vec2 scale)
+{
+    const u32 BINS = 10;
+    s32 histogram[BINS] = {};
+    float sample_min = samples[0];
+    float sample_max = samples[0];
+    for (u32 i = 0; i < sample_count; i++)
+    {
+        float sample = samples[i];
+        if (sample < sample_min) sample_min = sample;
+        if (sample > sample_max) sample_max = sample;
+    }
+    if (sample_min != sample_max)
+    {
+        float bin_width = BINS / (sample_max - sample_min);
+        for (u32 i = 0; i < sample_count; i++)
+        {
+            float sample = samples[i];
+            float norm = (sample - sample_min) / (sample_max - sample_min);
+            s32 bin = (s32)(norm * (BINS-1));
+            if (bin >= BINS) bin = BINS-1;
+            if (bin < 0) bin = 0;
+            histogram[bin]++;
+        }
+
+        lines_set_width(8.0f);
+        for (u32 bin = 0; bin < BINS; bin++)
+        {
+            float x = position.x + scale.x * ((float)bin / (BINS-1));
+            float y = position.y;
+            float h = (histogram[bin] / (float)NUM_REALIZATIONS) * scale.y;
+            lines_draw_line(x, y, x, y + h);
+        }
+        lines_flush();
+    }
+}
+
 void tick(Input io, float t, float dt)
 {
     persist bool draw_all_realizations = false;
-    persist bool draw_covariance = false;
-    persist bool draw_mean = false;
+    persist bool draw_covariance       = true;
+    persist bool draw_mean             = true;
+    persist bool draw_x_histogram      = false;
+    persist bool draw_y_histogram      = false;
+    persist bool draw_t_histogram      = false;
+    persist bool stop_hunter           = false;
+    persist s32  selected_target       = 0;
+
+    if (io.key.released['a']) selected_target--;
+    if (io.key.released['d']) selected_target++;
+    selected_target = mod(selected_target, NUM_TARGETS);
 
     Robot *true_targets = realizations[0].targets;
     for (u32 i = 0; i < NUM_REALIZATIONS; i++)
@@ -200,11 +255,13 @@ void tick(Input io, float t, float dt)
         cov_yy[i] /= (float)NUM_REALIZATIONS;
     }
 
-    update_hunter(mean_targets, true_targets, t, dt);
+    if (!stop_hunter)
+        update_hunter(mean_targets, true_targets, t, dt);
 
     blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     clearc(0.03f, 0.02f, 0.01f, 1.0f);
 
+    lines_set_width(2.0f);
     lines_set_color(vec4(1.0f, 0.95f, 0.7f, 0.15f));
     for (u32 i = 0; i <= 20; i++)
     {
@@ -252,13 +309,37 @@ void tick(Input io, float t, float dt)
     lines_set_color(vec4(1.0f, 0.3f, 0.1f, 1.0f));
     draw_targets(true_targets);
 
+    lines_set_color(vec4(1.0f, 0.9f, 0.1f, 1.0f));
+    lines_draw_circle(mean_targets[selected_target].position, 0.5f);
+
     lines_flush();
+
+// draw histograms for selected robot
+    float x_samples[NUM_REALIZATIONS] = {};
+    float y_samples[NUM_REALIZATIONS] = {};
+    float t_samples[NUM_REALIZATIONS] = {};
+    for (u32 i = 0; i < NUM_REALIZATIONS; i++)
+    {
+        x_samples[i] = realizations[i].targets[selected_target].position.x;
+        y_samples[i] = realizations[i].targets[selected_target].position.y;
+        t_samples[i] = realizations[i].targets[selected_target].angle;
+    }
+    if (draw_x_histogram)
+        draw_histogram(x_samples, NUM_REALIZATIONS, vec2(10.5f,   0.0f), vec2(4.0f, 5.0f));
+    if (draw_y_histogram)
+        draw_histogram(y_samples, NUM_REALIZATIONS, vec2(10.5f,  -5.0f), vec2(4.0f, 5.0f));
+    if (draw_t_histogram)
+        draw_histogram(t_samples, NUM_REALIZATIONS, vec2(10.5f, -10.0f), vec2(4.0f, 5.0f));
 
     ImGui::NewFrame();
     ImGui::Begin("Variables");
     ImGui::Checkbox("Draw all realizations", &draw_all_realizations);
     ImGui::Checkbox("Draw covariance", &draw_covariance);
     ImGui::Checkbox("Draw mean", &draw_mean);
+    ImGui::Checkbox("Draw x histogram", &draw_x_histogram);
+    ImGui::Checkbox("Draw y histogram", &draw_y_histogram);
+    ImGui::Checkbox("Draw angle histogram", &draw_t_histogram);
+    ImGui::Checkbox("Stop hunter", &stop_hunter);
     ImGui::End();
     ImGui::Render();
 }
