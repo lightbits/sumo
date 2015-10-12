@@ -1,9 +1,21 @@
 #include "sumo.h"
 #include <stdio.h>
-#define WINDOW_WIDTH 800
+#define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
+
+#define OBSTACLE_PATROL_RADIUS 5.0f
+#define NUM_TARGETS 10
+#define NUM_OBSTACLES 4
+#define NUM_REALIZATIONS 256
+
+s32 mod(s32 x, s32 r)
+{
+    x = x % r;
+    if (x < 0) return x + r;
+    return x;
+}
 
 struct Robot
 {
@@ -14,10 +26,6 @@ struct Robot
     float last_reverse;
 };
 
-#define OBSTACLE_PATROL_RADIUS 5.0f
-#define NUM_TARGETS 10
-#define NUM_OBSTACLES 4
-#define NUM_REALIZATIONS 256
 struct Realization
 {
     Robot targets[NUM_TARGETS];
@@ -60,6 +68,43 @@ void draw_targets(Robot *targets)
         lines_add_line(p + dy, p + dx);
         lines_add_line(p + dx, p - dy);
         lines_add_line(p - dy, p - dx);
+    }
+}
+
+void draw_histogram(float *samples, u32 sample_count, vec2 position, vec2 scale)
+{
+    const u32 BINS = 10;
+    s32 histogram[BINS] = {};
+    float sample_min = samples[0];
+    float sample_max = samples[0];
+    for (u32 i = 0; i < sample_count; i++)
+    {
+        float sample = samples[i];
+        if (sample < sample_min) sample_min = sample;
+        if (sample > sample_max) sample_max = sample;
+    }
+    if (sample_min != sample_max)
+    {
+        float bin_width = BINS / (sample_max - sample_min);
+        for (u32 i = 0; i < sample_count; i++)
+        {
+            float sample = samples[i];
+            float norm = (sample - sample_min) / (sample_max - sample_min);
+            s32 bin = (s32)(norm * (BINS-1));
+            if (bin >= BINS) bin = BINS-1;
+            if (bin < 0) bin = 0;
+            histogram[bin]++;
+        }
+
+        lines_set_width(8.0f);
+        for (u32 bin = 0; bin < BINS; bin++)
+        {
+            float x = position.x + scale.x * ((float)bin / (BINS-1));
+            float y = position.y;
+            float h = (histogram[bin] / (float)NUM_REALIZATIONS) * scale.y;
+            lines_draw_line(x, y, x, y + h);
+        }
+        lines_flush();
     }
 }
 
@@ -186,50 +231,6 @@ void update_hunter(Robot *mean_targets, Robot *true_targets, float t, float dt)
     }
 }
 
-s32 mod(s32 x, s32 r)
-{
-    x = x % r;
-    if (x < 0) return x + r;
-    return x;
-}
-
-void draw_histogram(float *samples, u32 sample_count, vec2 position, vec2 scale)
-{
-    const u32 BINS = 10;
-    s32 histogram[BINS] = {};
-    float sample_min = samples[0];
-    float sample_max = samples[0];
-    for (u32 i = 0; i < sample_count; i++)
-    {
-        float sample = samples[i];
-        if (sample < sample_min) sample_min = sample;
-        if (sample > sample_max) sample_max = sample;
-    }
-    if (sample_min != sample_max)
-    {
-        float bin_width = BINS / (sample_max - sample_min);
-        for (u32 i = 0; i < sample_count; i++)
-        {
-            float sample = samples[i];
-            float norm = (sample - sample_min) / (sample_max - sample_min);
-            s32 bin = (s32)(norm * (BINS-1));
-            if (bin >= BINS) bin = BINS-1;
-            if (bin < 0) bin = 0;
-            histogram[bin]++;
-        }
-
-        lines_set_width(8.0f);
-        for (u32 bin = 0; bin < BINS; bin++)
-        {
-            float x = position.x + scale.x * ((float)bin / (BINS-1));
-            float y = position.y;
-            float h = (histogram[bin] / (float)NUM_REALIZATIONS) * scale.y;
-            lines_draw_line(x, y, x, y + h);
-        }
-        lines_flush();
-    }
-}
-
 void tick(Input io, float t, float dt)
 {
     persist bool draw_all_realizations = false;
@@ -339,7 +340,7 @@ void tick(Input io, float t, float dt)
 
     lines_flush();
 
-// draw histograms for selected robot
+    // draw histograms for selected robot
     float x_samples[NUM_REALIZATIONS] = {};
     float y_samples[NUM_REALIZATIONS] = {};
     float t_samples[NUM_REALIZATIONS] = {};
