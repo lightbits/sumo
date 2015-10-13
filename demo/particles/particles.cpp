@@ -183,6 +183,8 @@ void tick(Input io, float t, float dt)
     attribfv("scale", 1, 1, 0);
     attribdiv("scale", 1);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, NUM_PARTICLES);
+    attribdiv("position", 0);
+    attribdiv("scale", 0);
 
     glBindTexture(GL_TEXTURE_2D, shadow_map.color[0]);
     glActiveTexture(GL_TEXTURE0);
@@ -222,6 +224,9 @@ void tick(Input io, float t, float dt)
     attribfv("scale", 1, 1, 0);
     attribdiv("scale", 1);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, NUM_PARTICLES);
+    attribdiv("position", 0);
+    attribdiv("color", 0);
+    attribdiv("scale", 0);
 
     #if 1
     s32 scale = 128;
