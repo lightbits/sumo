@@ -66,16 +66,22 @@ at the end of your prototyping app.
 #define WINDOW_GL_MINOR 1
 #endif
 
+// 1 : Enable double buffering
+// 0 : Disable double buffering
 #ifndef WINDOW_DOUBLE_BUFFER
 #define WINDOW_DOUBLE_BUFFER 1
 #endif
 
-#ifndef FPS_LOCK
-#define FPS_LOCK 60
+// 1 : Enable vsync
+// 0 : Disable vsync
+#ifndef WINDOW_VSYNC
+#define WINDOW_VSYNC 1
 #endif
 
+#ifdef FPS_LOCK
 #define FRAME_TIME (1.0 / FPS_LOCK)
 #define SLEEP_GRANULARITY (0.01)
+#endif
 
 #define SO_FBO_IMPLEMENTATION
 #include "so_fbo.h"
@@ -217,7 +223,7 @@ int main(int argc, char **argv)
     SDL_GLContext context = SDL_GL_CreateContext(window);
     check(context, "Failed to create context");
 
-    SDL_GL_SetSwapInterval(1); // Wait for vertical refresh
+    SDL_GL_SetSwapInterval(WINDOW_VSYNC);
 
     check(ogl_LoadFunctions() != ogl_LOAD_FAILED, "Failed to load OpenGL functions");
 
@@ -234,7 +240,7 @@ int main(int argc, char **argv)
     u64 initial_tick = get_tick();
     u64 last_frame_t = initial_tick;
     float elapsed_time = 0.0f;
-    float delta_time = FRAME_TIME;
+    float delta_time = 1.0f / 60.0f;
     int running = 1;
     while (running)
     {
@@ -274,7 +280,7 @@ int main(int argc, char **argv)
                         initial_tick = get_tick();
                         last_frame_t = initial_tick;
                         elapsed_time = 0.0f;
-                        delta_time = FRAME_TIME;
+                        delta_time = 1.0f / 60.0f;
                     }
                     if (event.key.keysym.sym == SDLK_PRINTSCREEN)
                         take_screenshot(window);
@@ -326,13 +332,16 @@ int main(int argc, char **argv)
 
         assert_gl();
 
-        elapsed_time = time_since(initial_tick);
         delta_time = time_since(last_frame_t);
 
+        #ifdef FPS_LOCK
         float sleep_time = FRAME_TIME - delta_time;
         if (sleep_time >= 0.0f && sleep_time >= SLEEP_GRANULARITY)
             SDL_Delay((u32)(sleep_time * 1000.0f));
+        #endif
+        delta_time = time_since(last_frame_t);
         last_frame_t = get_tick();
+        elapsed_time = time_since(initial_tick);
 
         #ifdef SUMO_DEBUG
         for (u32 i = 0; i < num_debug_counters; i++)
