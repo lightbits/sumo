@@ -150,6 +150,12 @@ void draw_line(vec2 a, vec2 b)
     }
 }
 
+void draw_lines(vec2 *points, u32 count)
+{
+    for (u32 i = 0; i < count - 1; i++)
+        draw_line(points[i], points[i+1]);
+}
+
 void init()
 {
     pass = make_render_pass(vs, fs);
@@ -165,16 +171,38 @@ void init()
     batch.mode.feather = 0.5f;
 }
 
+void draw_circle(vec2 position, float r)
+{
+    const u32 n = 128;
+    vec2 points[n];
+    for (u32 i = 0; i < n; i++)
+    {
+        float t = TWO_PI * (float)i / (float)(n-1);
+        points[i].x = position.x + r*cos(t);
+        points[i].y = position.y + r*sin(t);
+    }
+    draw_lines(points, n);
+}
+
 void tick(Input io, float t, float dt)
 {
-    batch.mode.width = 0.02f;
     blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     clearc(0.35f, 0.55f, 1.0f, 1.0f);
 
     draw_line(vec2(0.0f,0.0f), vec2(0.2f, 0.7f));
     draw_line(vec2(0.2f,0.7f), vec2(0.5f, 0.2f));
     draw_line(vec2(-0.5f, 0.2f), vec2(+0.8f, 0.4f));
+
+    draw_circle(vec2(0.0f, 0.0f), 0.5f);
     flush();
+
+    ImGui::NewFrame();
+    ImGui::Begin("Lines");
+    ImGui::SliderFloat("Feather", &batch.mode.feather, 0.0f, 1.0f);
+    ImGui::SliderFloat("Width", &batch.mode.width, 0.01f, 0.5f);
+    ImGui::Checkbox("Rounded", &batch.mode.rounded);
+    ImGui::End();
+    ImGui::Render();
 }
 
 #include "sumo.cpp"
