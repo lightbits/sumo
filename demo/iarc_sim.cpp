@@ -8,7 +8,7 @@
 #define OBSTACLE_PATROL_RADIUS 5.0f
 #define NUM_TARGETS 10
 #define NUM_OBSTACLES 4
-#define NUM_REALIZATIONS 256
+#define NUM_REALIZATIONS 64
 
 s32 mod(s32 x, s32 r)
 {
@@ -311,15 +311,16 @@ void tick(Input io, float t, float dt)
         }
     }
 
+    persist vec4 other_color = vec4(76.0f, 186.0f, 193.0f, 25.0f) / 255.0f;
     if (draw_all_realizations)
     {
-        lines_set_color(vec4(1.0f, 0.95f, 0.7f, 0.05f));
+        lines_set_color(other_color);
         for (u32 i = 1; i < NUM_REALIZATIONS; i++)
             draw_targets(realizations[i].targets);
     }
 
-    lines_set_color(vec4(1.0f, 1.0f, 1.0f, 0.35f));
-    lines_draw_circle(hunter.position, hunter.observe_radius);
+    // lines_set_color(vec4(1.0f, 1.0f, 1.0f, 0.35f));
+    // lines_draw_circle(hunter.position, hunter.observe_radius);
 
     if (draw_mean)
     {
@@ -332,11 +333,11 @@ void tick(Input io, float t, float dt)
         draw_targets(mean_targets);
     }
 
-    lines_set_color(vec4(1.0f, 0.3f, 0.1f, 1.0f));
+    lines_set_color(vec4(1.0f, 0.9f, 0.1f, 1.0f));
     draw_targets(true_targets);
 
-    lines_set_color(vec4(1.0f, 0.9f, 0.1f, 1.0f));
-    lines_draw_circle(mean_targets[selected_target].position, 0.5f);
+    // lines_set_color(vec4(1.0f, 0.9f, 0.1f, 1.0f));
+    // lines_draw_circle(mean_targets[selected_target].position, 0.5f);
 
     lines_flush();
 
@@ -359,6 +360,7 @@ void tick(Input io, float t, float dt)
 
     ImGui::NewFrame();
     ImGui::Begin("Variables");
+    ImGui::ColorEdit4("color", &other_color.x);
     ImGui::Checkbox("Draw all realizations", &draw_all_realizations);
     ImGui::Checkbox("Draw covariance", &draw_covariance);
     ImGui::Checkbox("Draw mean", &draw_mean);

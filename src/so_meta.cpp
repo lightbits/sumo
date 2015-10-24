@@ -23,6 +23,7 @@ enum TokenType
     TokenIdentifier,
     TokenString,
     TokenStruct,
+    TokenAsterisk,
     TokenClass,
     TokenComma,
     TokenSemicolon,
@@ -68,18 +69,34 @@ bool is_valid_identifier_char(char c)
     return is_alphabetical(c) || is_numerical(c) || c == '_';
 }
 
-bool matches_identifier(Token *token, char *identifier)
+bool string_match(char *a, int len_a,
+                  char *b, int len_b)
 {
     int i = 0;
-    while (i < token->length)
+    while (i < len_a)
     {
-        if (identifier[i] == 0)
-            return false;
-        if (token->text[i] != identifier[i])
-            return false;
+        if (i == len_b)   return false;
+        if (a[i] != b[i]) return false;
         i++;
     }
-    return identifier[i] == 0;
+    return i == len_b;
+}
+
+int length_of_null_terminated_string(char *s)
+{
+    int length = 0;
+    while (*s)
+    {
+        length++;
+        s++;
+    }
+    return length;
+}
+
+bool matches_identifier(Token *token, char *identifier)
+{
+    return string_match(token->text, token->length,
+                        identifier, length_of_null_terminated_string(identifier));
 }
 
 void eat_whitespace_and_comments(Lexer *lexer)
@@ -183,6 +200,12 @@ Token get_token(Lexer *lexer)
             lexer->at++;
         } break;
 
+        case '*':
+        {
+            result.type = TokenAsterisk;
+            lexer->at++;
+        } break;
+
         default:
         {
             if (is_valid_identifier_char(lexer->at[0]) &&
@@ -220,15 +243,84 @@ struct StructMember
     StructMember *next;
 };
 
-void introspect_struct(Lexer *lexer)
+// struct SeenMetaType
+// {
+//     char *name;
+//     int length;
+//     SeenMetaType *next;
+// };
+
+// struct SeenMetaTypes
+// {
+//     SeenMetaType *first;
+// };
+
+// void add_to_seen_meta_types(SeenMetaTypes *seen_types, char *name, int length)
+// {
+//     if (!seen_types->first)
+//     {
+//         seen_types->first = new SeenMetaType();
+//         seen_types->first->name = name;
+//         seen_types->first->length = length;
+//         seen_types->first->next = 0;
+//     }
+//     else
+//     {
+//         SeenMetaType *type = seen_types->first;
+//         SeenMetaType *prev_type = 0;
+//         while (type)
+//         {
+//             if (string_match(name, length, type->name, type->length))
+//                 return;
+//             prev_type = type;
+//             type = type->next;
+//         }
+//         prev_type->next = new SeenMetaType();
+//         prev_type->next->name = name;
+//         prev_type->next->length = length;
+//         prev_type->next->next = 0;
+//     }
+// }
+
+void parse_struct(Lexer *lexer)
 {
+    #if 1
     Token struct_name = get_token(lexer);
-    Token token = get_token(lexer);
+    bool parsing = true;
+    bool on_member = false;
+    while (parsing)
+    {
+        Token token = get_token(lexer);
+        switch (token.type)
+        {
+            case TokenIdentifier:
+            {
+                Token member_type = token.type;
+                parse_member(struct_name, member_type, lexer);
+            } break;
+
+            case TokenEof:
+            case TokenSemicolon:
+            {
+                parsing = false;
+            } break;
+        }
+    }
+    #else
     printf("MetaMemberData member_of_%.*s[] = {\n",
            struct_name.length, struct_name.text);
-    while (token.type != TokenEof &&
-           token.type != TokenCloseBrace)
+    while (parsing)
     {
+        Token token = get_token(lexer);
+        switch (token.type)
+        {
+            case TokenIdentifier:
+
+            case TokenComma:
+            case TokenSemicolon:
+            case TokenEof:
+            case TokenAsterisk
+        }
         if (token.type == TokenIdentifier)
         {
             Token member_type = token;
@@ -252,6 +344,8 @@ void introspect_struct(Lexer *lexer)
                 token = get_token(lexer);
             }
 
+            // add_to_seen_meta_types(seen_types, member_type.text, member_type.length);
+
             StructMember *member = &first_member;
             while (member)
             {
@@ -266,6 +360,7 @@ void introspect_struct(Lexer *lexer)
         token = get_token(lexer);
     }
     printf("};\n");
+    #endif
 }
 
 bool parse_introspectable(Lexer *lexer)
@@ -275,7 +370,7 @@ bool parse_introspectable(Lexer *lexer)
     {
         case TokenStruct:
         {
-            introspect_struct(lexer);
+            parse_struct(lexer);
             return true;
         } break;
 
@@ -310,6 +405,8 @@ int main(int argc, char **argv) // TODO: Take in file to introspect as argument
 
     printf("// Generated code for introspection\n", argv[1]);
 
+    // SeenMetaTypes seen_types = {};
+
     Lexer lexer = {};
     lexer.at = file;
     Token token = get_token(&lexer);
@@ -326,6 +423,15 @@ int main(int argc, char **argv) // TODO: Take in file to introspect as argument
         }
         token = get_token(&lexer);
     }
+
+    // printf("//enum MetaType\n//{\n");
+    // SeenMetaType *type = seen_types.first;
+    // while (type)
+    // {
+    //     printf("//    MetaType_%.*s,\n", type->length, type->name);
+    //     type = type->next;
+    // }
+    // printf("//};\n");
 
     return 0;
 }
