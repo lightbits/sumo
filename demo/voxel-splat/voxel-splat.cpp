@@ -19,7 +19,7 @@ RenderPass pass1;
 
 float eval(float x, float y, float z)
 {
-    vec3 p = vec3(x, y, z);
+    vec3 p = V3(x, y, z);
     return length(p) - 0.5;
 }
 

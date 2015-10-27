@@ -26,7 +26,7 @@ void reset()
 void init()
 {
     lines_init();
-    lines_set_color(vec4(0.00f, 0.63f, 0.69f, 0.13f));
+    lines_set_color(V4(0.00f, 0.63f, 0.69f, 0.13f));
     reset();
 }
 
@@ -48,12 +48,12 @@ void tick(Input io, float t, float dt)
     // {
     //     float dx = field_range / NUM_TRACES_X;
     //     float dy = field_range / NUM_TRACES_Y;
-    //     lines_set_color(vec4(0.95f, 0.35f, 0.1f, 0.02f));
-    //     lines_draw_rect(points[i] - vec2(dx, dy) * 0.5f, vec2(dx, dy));
-    //     lines_draw_line(points[i] - vec2(dx, dy) * 0.1f,
-    //                     points[i] + vec2(dx, dy) * 0.1f);
-    //     lines_draw_line(points[i] + vec2(-dx, dy) * 0.1f,
-    //                     points[i] + vec2(dx, -dy) * 0.1f);
+    //     lines_set_color(V4(0.95f, 0.35f, 0.1f, 0.02f));
+    //     lines_draw_rect(points[i] - V2(dx, dy) * 0.5f, V2(dx, dy));
+    //     lines_draw_line(points[i] - V2(dx, dy) * 0.1f,
+    //                     points[i] + V2(dx, dy) * 0.1f);
+    //     lines_draw_line(points[i] + V2(-dx, dy) * 0.1f,
+    //                     points[i] + V2(dx, -dy) * 0.1f);
     // }
 
     for (u32 j = 0; j < 10; j++)
@@ -62,8 +62,8 @@ void tick(Input io, float t, float dt)
         vec2 fi = f(a, b, c, points[i]);
         vec2 q = points[i] + fi * sim_speed * dt;
         float blend = mapf(0.0f, 50.0f, length(fi), 0.0f, 1.0f);
-        vec4 color = mixf(vec4(0.00f, 0.63f, 0.69f, 0.13f),
-                          vec4(1.0f, 0.3f, 0.1f, 0.2f),
+        vec4 color = mixf(V4(0.00f, 0.63f, 0.69f, 0.13f),
+                          V4(1.0f, 0.3f, 0.1f, 0.2f),
                           blend);
 
         lines_set_color(color);

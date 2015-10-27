@@ -108,7 +108,7 @@ void compute_cpcf(vec2 *seeds, vec2 *result,
     for (u32 y = 0; y < height; y++)
     for (u32 x = 0; x < width; x++)
     {
-        vec2 p = vec2((r32)x / width, (r32)y / height);
+        vec2 p = V2((r32)x / width, (r32)y / height);
         result[i++] = compute_d(seeds, num_seeds, p);
     }
 }
@@ -118,9 +118,9 @@ void init()
     pass = make_render_pass(SDF_VS, SDF_FS);
     quad = make_quad();
 
-    cpcf.seeds[0] = vec2(0.25f, 0.45f);
-    cpcf.seeds[1] = vec2(0.5f, 0.5f);
-    cpcf.seeds[2] = vec2(0.8f, 0.8f);
+    cpcf.seeds[0] = V2(0.25f, 0.45f);
+    cpcf.seeds[1] = V2(0.5f, 0.5f);
+    cpcf.seeds[2] = V2(0.8f, 0.8f);
     compute_cpcf(cpcf.seeds, cpcf.field, CPCF_Width, CPCF_Height, CPCF_Seeds);
     cpcf.tex = so_make_tex2d(cpcf.field, CPCF_Width, CPCF_Height,
                              GL_RG32F, GL_RG, GL_FLOAT,

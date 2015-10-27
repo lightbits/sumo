@@ -78,9 +78,9 @@ void pick_vector_perspective(vec2 ndc, r32 zn, mat4 projection,
     r32 zv = -zn;
 
     // the camera frame expressed in world frame
-    vec3 camera_x = vec3(view.x.x, view.y.x, view.z.x);
-    vec3 camera_y = vec3(view.x.y, view.y.y, view.z.y);
-    vec3 camera_z = vec3(view.x.z, view.y.z, view.z.z);
+    vec3 camera_x = V3(view.x.x, view.y.x, view.z.x);
+    vec3 camera_y = V3(view.x.y, view.y.y, view.z.y);
+    vec3 camera_z = V3(view.x.z, view.y.z, view.z.z);
 
     *dir = camera_x * xv + camera_y * yv + camera_z * zv;
     *dir = normalize(*dir);
@@ -171,9 +171,9 @@ u32 scene_add_object(Scene *scene, vec3 bounds_offset, r32 bounds_radius)
     ASSERT(scene->object_count < MaxSceneObjects);
     u32 index = scene->object_count;
     SceneObject *object = scene->objects + index;
-    object->position = vec3(0, 0, 0);
-    object->rotation.euler = vec3(0, 0, 0);
-    object->rotation.quaternion = vec4(0, 0, 0, 0);
+    object->position = V3(0, 0, 0);
+    object->rotation.euler = V3(0, 0, 0);
+    object->rotation.quaternion = V4(0, 0, 0, 0);
     object->rotation.matrix = mat_identity();
     object->bounds.offset = bounds_offset;
     object->bounds.radius = bounds_radius;
@@ -186,7 +186,7 @@ void scene_tick(Scene *scene, Input io, mat4 view,
                 s32 *selected_object_index)
 {
     vec3 ro, rd;
-    vec2 ndc = (io.mouse.pos / vec2(WINDOW_WIDTH, -WINDOW_HEIGHT)) * 2.0f + vec2(-1.0f, +1.0f);
+    vec2 ndc = (io.mouse.pos / V2(WINDOW_WIDTH, -WINDOW_HEIGHT)) * 2.0f + V2(-1.0f, +1.0f);
     pick_vector_perspective(ndc, zn, projection, view, &rd, &ro);
     r32 closest_t = -1.0f;
     s32 closest_i = -1;
@@ -258,24 +258,24 @@ GLuint scene_make_grid()
     {
         r32 t = -1.0f + 2.0f * i / (r32)(GridLinesDim - 1);
 
-        vec4 x_color = vec4(1.0f, 1.0f, 1.0f, 0.2f);
-        vec4 z_color = vec4(1.0f, 1.0f, 1.0f, 0.2f);
+        vec4 x_color = V4(1.0f, 1.0f, 1.0f, 0.2f);
+        vec4 z_color = V4(1.0f, 1.0f, 1.0f, 0.2f);
         if (i == GridLinesDim / 2)
         {
-            x_color = vec4(1.0f, 0.33f, 0.2f, 0.5f);
-            z_color = vec4(0.2f, 0.33f, 1.0f, 0.5f);
+            x_color = V4(1.0f, 0.33f, 0.2f, 0.5f);
+            z_color = V4(0.2f, 0.33f, 1.0f, 0.5f);
         }
 
-        v[ix].position = vec3(-1.0f, 0.0f, t);
+        v[ix].position = V3(-1.0f, 0.0f, t);
         v[ix++].color = x_color;
 
-        v[ix].position = vec3(+1.0f, 0.0f, t);
+        v[ix].position = V3(+1.0f, 0.0f, t);
         v[ix++].color = x_color;
 
-        v[iz].position = vec3(t, 0.0f, -1.0f);
+        v[iz].position = V3(t, 0.0f, -1.0f);
         v[iz++].color = z_color;
 
-        v[iz].position = vec3(t, 0.0f, 1.0f);
+        v[iz].position = V3(t, 0.0f, 1.0f);
         v[iz++].color = z_color;
     }
     return make_buffer(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
@@ -290,7 +290,7 @@ void init()
 
     scene = make_scene();
     for (u32 i = 0; i < NumCubes; i++)
-        scene_add_object(&scene, vec3(0, 0, 0), 0.1f);
+        scene_add_object(&scene, V3(0, 0, 0), 0.1f);
 
     axes = scene_make_axes();
     grid = scene_make_grid();
@@ -303,16 +303,16 @@ void tick(Input io, r32 t, r32 dt)
     mat4 view = mat_translate(0.0f, 0.0f, -1.0f) * mat_rotate_x(0.3f) * mat_rotate_y(0.2f);
 
     #if 0
-    vec2 ndc = (io.mouse.pos / vec2(WINDOW_WIDTH, -WINDOW_HEIGHT)) * 2.0f + vec2(-1.0f, +1.0f);
+    vec2 ndc = (io.mouse.pos / V2(WINDOW_WIDTH, -WINDOW_HEIGHT)) * 2.0f + V2(-1.0f, +1.0f);
     vec3 dir, pos;
     pick_vector_perspective(ndc, 0.1f, projection, view, &dir, &pos);
     r32 t_plane;
-    intersect_ray_plane(pos, dir, vec3(0, 1, 0), 0.0f, &t_plane);
+    intersect_ray_plane(pos, dir, V3(0, 1, 0), 0.0f, &t_plane);
     vec3 traced = pos + dir * t_plane;
     mat4 model = mat_translate(traced) * mat_scale(0.1f);
     #endif
 
-    vec4 clear_color = vec4(0.01f, 0.05f, 0.1f, 1.0f);
+    vec4 clear_color = V4(0.01f, 0.05f, 0.1f, 1.0f);
 
     s32 hover = -1;
     scene_tick(&scene, io, view, 0.1f, projection, &hover);

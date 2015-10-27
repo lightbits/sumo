@@ -24,8 +24,8 @@ void init()
 
     sat.m = 80.0f;
     sat.r = 1.2f;
-    sat.q = vec3(1.0f, 1.0f, 1.0f);
-    sat.w = vec3(0.0f, 0.0f, 0.0f);
+    sat.q = V3(1.0f, 1.0f, 1.0f);
+    sat.w = V3(0.0f, 0.0f, 0.0f);
 }
 
 void tick(Input io, float t, float dt)
@@ -34,13 +34,13 @@ void tick(Input io, float t, float dt)
     mat4 view = mat_translate(0.0f, 0.0f, -5.0f) * mat_rotate_x(0.3f) * mat_rotate_y(0.2f);
     mat4 model = mat_scale(0.5f) * mat_rotate_z(sat.q.z) * mat_rotate_y(sat.q.y) * mat_rotate_x(sat.q.x);
 
-    vec3 e1 = vec3(1.0f, sin(sat.q.x) * tan(sat.q.y), cos(sat.q.x) * tan(sat.q.y));
-    vec3 e2 = vec3(0.0f, cos(sat.q.x), -sin(sat.q.x));
-    vec3 e3 = vec3(0.0f, sin(sat.q.x) / cos(sat.q.y), cos(sat.q.x) / cos(sat.q.y));
+    vec3 e1 = V3(1.0f, sin(sat.q.x) * tan(sat.q.y), cos(sat.q.x) * tan(sat.q.y));
+    vec3 e2 = V3(0.0f, cos(sat.q.x), -sin(sat.q.x));
+    vec3 e3 = V3(0.0f, sin(sat.q.x) / cos(sat.q.y), cos(sat.q.x) / cos(sat.q.y));
     r32 M = sat.m*sat.r*sat.r;
     r32 kd = 2*PI*sat.m*sat.r*sat.r;
     r32 kp = kd;
-    vec3 qr = vec3(0.0f, 0.0f, 0.0f);
+    vec3 qr = V3(0.0f, 0.0f, 0.0f);
 
     r32 h = dt / 50.0f;
     for (u32 i = 0; i < 50; i++)

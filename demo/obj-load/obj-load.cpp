@@ -245,7 +245,7 @@ void init()
     for (u32 x = 0; x < SDF_RES; x++)
     {
         r32 d_min = 8.0f;
-        vec3 p = vec3(-1.0f + 2.0f * x / SDF_RES,
+        vec3 p = V3(-1.0f + 2.0f * x / SDF_RES,
                       -1.0f + 2.0f * y / SDF_RES,
                       -1.0f + 2.0f * z / SDF_RES);
         for (u32 f = 0; f < mesh.num_indices; f += 3)

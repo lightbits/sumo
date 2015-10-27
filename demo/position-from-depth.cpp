@@ -122,12 +122,12 @@ void init()
 
 void tick(Input io, float t, float dt)
 {
-    lights.position[0] = vec3(0.0f, 2.0f, 0.0f);
-    lights.position[1] = vec3(sin(t), 0.5f, cos(t));
-    lights.position[2] = vec3(0.0f, 1.0f, 3.0f);
-    lights.color[0] = vec3(0.93, 0.74, 0.58) * 0.8f;
-    lights.color[1] = vec3(0.68, 0.87, 0.91) * 0.7f;
-    lights.color[2] = vec3(1.0, 0.55, 0.2) * 0.3f;
+    lights.position[0] = V3(0.0f, 2.0f, 0.0f);
+    lights.position[1] = V3(sin(t), 0.5f, cos(t));
+    lights.position[2] = V3(0.0f, 1.0f, 3.0f);
+    lights.color[0] = V3(0.93, 0.74, 0.58) * 0.8f;
+    lights.color[1] = V3(0.68, 0.87, 0.91) * 0.7f;
+    lights.color[2] = V3(1.0, 0.55, 0.2) * 0.3f;
     lights.radius[0] = 10.0f;
     lights.radius[1] = 0.5f;
     lights.radius[2] = 4.0f;
@@ -177,7 +177,7 @@ void tick(Input io, float t, float dt)
 
     for (u32 i = 0; i < NUM_LIGHTS; i++)
     {
-        uniformf("light_position", (view * vec4(lights.position[i], 1.0f)).xyz());
+        uniformf("light_position", (view * V4(lights.position[i], 1.0f)).xyz());
         uniformf("light_color", lights.color[i]);
         uniformf("light_radius", lights.radius[i]);
         glDrawArrays(GL_TRIANGLES, 0, 6);

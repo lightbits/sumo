@@ -25,7 +25,7 @@ RenderPass load_render_pass(char *vertex_shader = 0,
 
 void begin(RenderPass *pass);
 void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized = false);
-void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool normalized = false);
+void attribv(char *name, GLenum type, u32 count, u32 stride, void *offset, bool normalized = false);
 void attribdiv(char *name, u32 divisor);
 void uniformi(char *name, s32 x);
 void uniformi(char *name, s32 x, s32 y);
@@ -167,7 +167,7 @@ void uniformf(char *name, mat4 x)
     glUniformMatrix4fv(location, 1, GL_FALSE, x.data);
 }
 
-void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool normalized)
+void attribv(char *name, GLenum type, u32 count, u32 stride, void *offset, bool normalized)
 {
     GLint location = get_attrib_location(_active_render_pass, name);
     glEnableVertexAttribArray(location);
@@ -176,7 +176,7 @@ void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool no
 
 void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized)
 {
-    attribv(name, GL_FLOAT, count, stride * sizeof(GLfloat), offset * sizeof(GLfloat));
+    attribv(name, GL_FLOAT, count, stride * sizeof(GLfloat), (void*)(offset * sizeof(GLfloat)));
 }
 
 void attribdiv(char *name, u32 divisor)

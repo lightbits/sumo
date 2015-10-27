@@ -67,20 +67,20 @@ void begin(RenderPass *pass, so_Framebuffer *fbo)
 void spawn_particle(u32 i)
 {
     vec3 color_choices[3] = {
-        vec3(0.70, 0.24, 0.11),
-        vec3(0.00, 0.35, 0.33),
-        vec3(0.77, 0.71, 0.46)
+        V3(0.70, 0.24, 0.11),
+        V3(0.00, 0.35, 0.33),
+        V3(0.77, 0.71, 0.46)
     };
 
     particles.lifetime[i] = 2.0f + (6.0f - 2.0f) * frand();
     particles.scale[i] = 0.02f + (0.08f - 0.02f) * frand();
     particles.color[i] = color_choices[xor128() % 3];
-    particles.position[i] = vec3(-0.1f + 0.2f * frand(),
+    particles.position[i] = V3(-0.1f + 0.2f * frand(),
                                  0.1f + 0.1f * frand(),
                                  -0.1f + 0.2f * frand());
     particles.position[i].z *= 0.4f;
     particles.position[i].x *= 0.4f;
-    particles.velocity[i] = vec3(-1.0f + 2.0f * frand(),
+    particles.velocity[i] = V3(-1.0f + 2.0f * frand(),
                                  1.0f + frand() * 4.0f,
                                  -1.0f + 2.0f * frand());
 }
@@ -154,7 +154,7 @@ void update_particles(float dt)
 void tick(Input io, float t, float dt)
 {
     update_particles(dt);
-    vec3 sky_bounce = vec3(0.2f, 0.25f, 0.35f);
+    vec3 sky_bounce = V3(0.2f, 0.25f, 0.35f);
     r32 z_near = 0.1f;
     r32 z_far = 10.0f;
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, z_near, z_far);
@@ -164,7 +164,7 @@ void tick(Input io, float t, float dt)
     mat4 light_projection = mat_ortho_depth(-4.0f, +4.0f, -4.0f, +4.0f, 0.1f, 10.0f);
     mat4 light_view = mat_translate(0.0f, 0.0f, -4.0f) * mat_rotate_x(0.7f) * mat_rotate_y(-0.4f);
     // direction to sun in view-space
-    vec3 sun_dir = (view * mat_rotate_y(0.4f) * mat_rotate_x(-0.7f) * vec4(0.0f, 0.0f, -1.0f, 0.0f)).xyz();
+    vec3 sun_dir = (view * mat_rotate_y(0.4f) * mat_rotate_x(-0.7f) * V4(0.0f, 0.0f, -1.0f, 0.0f)).xyz();
     sun_dir *= -1.0f;
 
     begin(&shadow_pass, &shadow_map);
@@ -239,18 +239,18 @@ void tick(Input io, float t, float dt)
     glBindTexture(shadow_map.target[0], shadow_map.color[0]);
 
     glViewport(0, 0, scale, scale);
-    uniformf("maskr", vec4(1, 1, 1, 1));
-    uniformf("maskg", vec4(0, 0, 0, 0));
-    uniformf("maskb", vec4(0, 0, 0, 0));
-    uniformf("maska", vec4(0, 0, 0, 0));
+    uniformf("maskr", V4(1, 1, 1, 1));
+    uniformf("maskg", V4(0, 0, 0, 0));
+    uniformf("maskb", V4(0, 0, 0, 0));
+    uniformf("maska", V4(0, 0, 0, 0));
     uniformi("channel", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(scale, 0, scale, scale);
-    uniformf("maskr", vec4(0, 0, 0, 0));
-    uniformf("maskg", vec4(1, 1, 1, 1));
-    uniformf("maskb", vec4(0, 0, 0, 0));
-    uniformf("maska", vec4(0, 0, 0, 0));
+    uniformf("maskr", V4(0, 0, 0, 0));
+    uniformf("maskg", V4(1, 1, 1, 1));
+    uniformf("maskb", V4(0, 0, 0, 0));
+    uniformf("maska", V4(0, 0, 0, 0));
     uniformi("channel", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     #endif

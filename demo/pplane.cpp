@@ -137,8 +137,8 @@ void init()
 #define Spawn_Interval 0.1
 #define Particle_Lifetime 5.0
 #define Spawn_Radius_Noise 0.5
-#define Slow_Color vec3(0.00f, 0.63f, 0.69f)
-#define Fast_Color vec3(1.00f, 0.30f, 0.10f)
+#define Slow_Color V3(0.00f, 0.63f, 0.69f)
+#define Fast_Color V3(1.00f, 0.30f, 0.10f)
 void spawn(r32 x, r32 y, r32 dt, r32 field_range)
 {
     persist r32 time_since_last_spawn = Spawn_Interval;
@@ -218,10 +218,10 @@ void tick(Input io, r32 t, r32 dt)
     {
         for (u32 i = 0; i < Particle_Count; i++)
         {
-            particles.position[i] = vec2(0.0f, 0.0f);
-            particles.color[i] = vec3(0.0f, 0.0f, 0.0f);
+            particles.position[i] = V2(0.0f, 0.0f);
+            particles.color[i] = V3(0.0f, 0.0f, 0.0f);
             particles.lifetime[i] = 0.0f;
-            particles.start_position[i] = vec2(0.0f, 0.0f);
+            particles.start_position[i] = V2(0.0f, 0.0f);
         }
     }
 

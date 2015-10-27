@@ -114,7 +114,7 @@ void add_vertices(Vertex *vertices, u32 count)
 void draw_line(vec2 a, vec2 b)
 {
     vec2 ab = b - a;
-    vec2 h = normalize(vec2(-ab.y, ab.x)) * batch.mode.width * 0.5f;
+    vec2 h = normalize(V2(-ab.y, ab.x)) * batch.mode.width * 0.5f;
     vec2 r = normalize(ab) * batch.mode.width * 0.5f;
     Vertex v1, v2, v3, v4, v5, v6, v7, v8;
 
@@ -163,7 +163,7 @@ void init()
     batch.used = 0;
     batch.size = VERTICES_PER_BATCH;
     batch.buffer = make_buffer(GL_ARRAY_BUFFER, sizeof(Vertex) * batch.size, 0, GL_DYNAMIC_DRAW);
-    batch.mode.color = vec4(1,1,1,1);
+    batch.mode.color = V4(1,1,1,1);
     batch.mode.width = 0.1f;
     batch.mode.global_scale.x = (float)WINDOW_HEIGHT / WINDOW_WIDTH;
     batch.mode.global_scale.y = 1.0f;
@@ -189,11 +189,11 @@ void tick(Input io, float t, float dt)
     blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     clearc(0.35f, 0.55f, 1.0f, 1.0f);
 
-    draw_line(vec2(0.0f,0.0f), vec2(0.2f, 0.7f));
-    draw_line(vec2(0.2f,0.7f), vec2(0.5f, 0.2f));
-    draw_line(vec2(-0.5f, 0.2f), vec2(+0.8f, 0.4f));
+    draw_line(V2(0.0f,0.0f), V2(0.2f, 0.7f));
+    draw_line(V2(0.2f,0.7f), V2(0.5f, 0.2f));
+    draw_line(V2(-0.5f, 0.2f), V2(+0.8f, 0.4f));
 
-    draw_circle(vec2(0.0f, 0.0f), 0.5f);
+    draw_circle(V2(0.0f, 0.0f), 0.5f);
     flush();
 
     ImGui::NewFrame();

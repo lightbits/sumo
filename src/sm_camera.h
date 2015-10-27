@@ -12,7 +12,7 @@ mat4 camera_holdclick(Input io, float dt, float move_speed)
     persist r32 dtheta = 0.0f;
     persist r32 phi = 0.0f;
     persist r32 dphi = 0.0f;
-    persist vec3 pos = vec3(0.0f, 0.0f, 0.0f);
+    persist vec3 pos = V3(0.0f, 0.0f, 0.0f);
     persist r32 x = 0.0f;
     persist r32 dx = 0.0f;
     persist r32 y = 0.0f;
@@ -35,13 +35,13 @@ mat4 camera_holdclick(Input io, float dt, float move_speed)
     mat4 rotation = mat_rotate_x(-phi) * mat_rotate_y(theta);
 
     // Use this for the FPS camera!
-    // frame * vec3(0, 0, -1) = forward
-    // frame * vec3(0, 1, 0) = up
-    // frame * vec3(1, 0, 0) = right
+    // frame * V3(0, 0, -1) = forward
+    // frame * V3(0, 1, 0) = up
+    // frame * V3(1, 0, 0) = right
     // mat4 frame = mat_rotate_y(-theta) * mat_rotate_x(phi);
-    // vec3 forward = vec3(-frame.z.x, -frame.z.y, -frame.z.z);
-    // vec3 right = vec3(frame.x.x, frame.x.y, frame.x.z);
-    // vec3 up = vec3(frame.y.x, frame.y.y, frame.y.z);
+    // vec3 forward = V3(-frame.z.x, -frame.z.y, -frame.z.z);
+    // vec3 right = V3(frame.x.x, frame.x.y, frame.x.z);
+    // vec3 up = V3(frame.y.x, frame.y.y, frame.y.z);
 
     if (io.key.down['a'])
         dx = -1.0f;

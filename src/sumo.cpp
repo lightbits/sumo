@@ -189,7 +189,7 @@ void take_screenshot(SDL_Window *window)
         else *c = tolower(WINDOW_TITLE[i]);
         c++;
     }
-    sprintf(c, "_%d.png", get_tick());
+    sprintf(c, "_%lu.png", get_tick());
 
     // Write result flipped vertically, beginning on the last row
     // and moving backwards.

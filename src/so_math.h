@@ -56,8 +56,6 @@ _fast_inv_sqrt(float x)
 
 union vec2
 {
-    vec2(float X, float Y) : x(X), y(Y) {}
-    vec2() : x(0), y(0) {}
     struct
     {
         float x, y;
@@ -67,8 +65,6 @@ union vec2
 
 union vec3
 {
-    vec3(float X, float Y, float Z) : x(X), y(Y), z(Z) {}
-    vec3() : x(0), y(0), z(0) {}
     struct
     {
         float x, y, z;
@@ -78,9 +74,6 @@ union vec3
 
 union vec4
 {
-    vec4(float X, float Y, float Z, float W) : x(X), y(Y), z(Z), w(W) {}
-    vec4(vec3 V, float W) : x(V.x), y(V.y), z(V.z), w(W) {}
-    vec4() : x(0), y(0), z(0), w(0) {}
     struct
     {
         float x, y, z, w;
@@ -89,7 +82,8 @@ union vec4
 
     vec3 xyz()
     {
-        return vec3(x, y, z);
+        vec3 result = { x, y, z };
+        return result;
     }
 };
 
@@ -104,13 +98,25 @@ union mat4
 
 ///////////// vec2
 
-vec2 operator *(vec2 a, vec2 b)  { return vec2(a.x * b.x, a.y * b.y); }
-vec2 operator *(vec2 a, float s) { return vec2(a.x * s, a.y * s); }
-vec2 operator +(vec2 a, vec2 b)  { return vec2(a.x + b.x, a.y + b.y); }
-vec2 operator -(vec2 a, vec2 b)  { return vec2(a.x - b.x, a.y - b.y); }
-vec2 operator /(vec2 a, vec2 b)  { return vec2(a.x / b.x, a.y / b.y); }
+vec2 V2()
+{
+    vec2 result = { 0, 0 };
+    return result;
+}
+
+vec2 V2(float x, float y)
+{
+    vec2 result = { x, y };
+    return result;
+}
+
+vec2 operator *(vec2 a, vec2 b)  { return V2(a.x * b.x, a.y * b.y); }
+vec2 operator *(vec2 a, float s) { return V2(a.x * s, a.y * s); }
+vec2 operator +(vec2 a, vec2 b)  { return V2(a.x + b.x, a.y + b.y); }
+vec2 operator -(vec2 a, vec2 b)  { return V2(a.x - b.x, a.y - b.y); }
+vec2 operator /(vec2 a, vec2 b)  { return V2(a.x / b.x, a.y / b.y); }
 vec2 operator /(vec2 a, float s) { return a * (1.0f / s); }
-vec2 operator -(vec2 a) { return vec2(-a.x, -a.y); }
+vec2 operator -(vec2 a) { return V2(-a.x, -a.y); }
 vec2 &operator *=(vec2 &a, vec2 b)  { a = a * b; return a; }
 vec2 &operator *=(vec2 &a, float s) { a = a * s; return a; }
 vec2 &operator +=(vec2 &a, vec2 b)  { a = a + b; return a; }
@@ -118,23 +124,35 @@ vec2 &operator -=(vec2 &a, vec2 b)  { a = a - b; return a; }
 
 ///////////// vec3
 
+vec3 V3()
+{
+    vec3 result = { 0, 0, 0 };
+    return result;
+}
+
+vec3 V3(float x, float y, float z)
+{
+    vec3 result = { x, y, z };
+    return result;
+}
+
 vec3 operator *(vec3 a, vec3 b) {
-    return vec3(a.x * b.x, a.y * b.y, a.z * b.z);
+    return V3(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 vec3 operator *(vec3 a, float s) {
-    return vec3(a.x * s, a.y * s, a.z * s);
+    return V3(a.x * s, a.y * s, a.z * s);
 }
 vec3 operator +(vec3 a, vec3 b) {
-    return vec3(a.x + b.x, a.y + b.y, a.z + b.z);
+    return V3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 vec3 operator -(vec3 a, vec3 b) {
-    return vec3(a.x - b.x, a.y - b.y, a.z - b.z);
+    return V3(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 vec3 operator /(vec3 a, vec3 b) {
-    return vec3(a.x / b.x, a.y / b.y, a.z / b.z);
+    return V3(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 vec3 operator /(vec3 a, float s) {
-    return vec3(a.x / s, a.y / s, a.z / s);
+    return V3(a.x / s, a.y / s, a.z / s);
 }
 vec3 &operator *=(vec3 &a, vec3 b)  { a = a * b; return a; }
 vec3 &operator *=(vec3 &a, float s) { a = a * s; return a; }
@@ -143,30 +161,48 @@ vec3 &operator -=(vec3 &a, vec3 b)  { a = a - b; return a; }
 
 vec3 cross(vec3 a, vec3 b)
 {
-    return vec3(a.y*b.z - a.z*b.y,
+    return V3(a.y*b.z - a.z*b.y,
                 a.z*b.x - a.x*b.z,
                 a.x*b.y - a.y*b.x);
 }
 
 ///////////// vec4
 
+vec4 V4()
+{
+    vec4 result = { 0, 0, 0, 0 };
+    return result;
+}
+
+vec4 V4(float x, float y, float z, float w)
+{
+    vec4 result = { x, y, z, w };
+    return result;
+}
+
+vec4 V4(vec3 v, float w)
+{
+    vec4 result = { v.x, v.y, v.z, w };
+    return result;
+}
+
 vec4 operator *(vec4 a, vec4 b) {
-    return vec4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+    return V4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
 vec4 operator *(vec4 a, float s) {
-    return vec4(a.x * s, a.y * s, a.z * s, a.w * s);
+    return V4(a.x * s, a.y * s, a.z * s, a.w * s);
 }
 vec4 operator +(vec4 a, vec4 b) {
-    return vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+    return V4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 vec4 operator -(vec4 a, vec4 b) {
-    return vec4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+    return V4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
 }
 vec4 operator /(vec4 a, vec4 b) {
-    return vec4(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+    return V4(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
 vec4 operator /(vec4 a, float s) {
-    return vec4(a.x / s, a.y / s, a.z / s, a.w / s);
+    return V4(a.x / s, a.y / s, a.z / s, a.w / s);
 }
 vec4 &operator *=(vec4 &a, vec4 b)  { a = a * b; return a; }
 vec4 &operator *=(vec4 &a, float s) { a = a * s; return a; }

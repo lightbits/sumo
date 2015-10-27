@@ -48,7 +48,7 @@ void lines_draw_circle(vec2 p, float r)
     for (u32 i = 0; i < 32; i++)
     {
         float a = TWO_PI * i / 31.0f;
-        vec2 d = vec2(cos(a), sin(a)) * r;
+        vec2 d = V2(cos(a), sin(a)) * r;
         points[i] = p + d;
     }
     lines_draw_poly(points, 32);
@@ -60,10 +60,10 @@ void draw_targets(Robot *targets)
     {
         vec2 p = targets[i].position;
         float t = targets[i].angle;
-        vec2 v = vec2(cos(t), sin(t)) * 0.3f;
+        vec2 v = V2(cos(t), sin(t)) * 0.3f;
         lines_add_line(p, p + v);
-        vec2 dx = vec2(0.2f, 0.0f);
-        vec2 dy = vec2(0.0f, 0.2f);
+        vec2 dx = V2(0.2f, 0.0f);
+        vec2 dy = V2(0.0f, 0.2f);
         lines_add_line(p - dx, p + dy);
         lines_add_line(p + dy, p + dx);
         lines_add_line(p + dx, p - dy);
@@ -116,7 +116,7 @@ void init_realizations()
         for (u32 i = 0; i < NUM_TARGETS; i++)
         {
             float theta = (float)i * (TWO_PI / NUM_TARGETS);
-            targets[i].position = vec2(cos(theta), sin(theta));
+            targets[i].position = V2(cos(theta), sin(theta));
             targets[i].angle = theta;
             targets[i].speed = 0.33f;
             targets[i].last_noise = 0.0f;
@@ -127,7 +127,7 @@ void init_realizations()
         for (u32 i = 0; i < NUM_OBSTACLES; i++)
         {
             float theta = (float)i * (TWO_PI / NUM_OBSTACLES);
-            obstacles[i].position = vec2(cos(theta), sin(theta));
+            obstacles[i].position = V2(cos(theta), sin(theta));
             obstacles[i].angle = theta;
             obstacles[i].speed = 0.33f;
         }
@@ -141,7 +141,7 @@ void init()
     lines_set_scale(a/12.0f, 1.0f/12.0f);
     lines_set_width(2.0f);
     init_realizations();
-    hunter.position = vec2(0.0f, 0.0f);
+    hunter.position = V2(0.0f, 0.0f);
     hunter.observe_radius = 0.5f;
 }
 
@@ -178,7 +178,7 @@ void update_targets(Robot *targets, float t, float dt)
         }
         if (target->angle > TWO_PI) target->angle -= TWO_PI;
         if (target->angle < 0.0f) target->angle += TWO_PI;
-        vec2 v = vec2(cos(target->angle), sin(target->angle)) * target->speed;
+        vec2 v = V2(cos(target->angle), sin(target->angle)) * target->speed;
         target->position += v * dt;
     }
 }
@@ -288,7 +288,7 @@ void tick(Input io, float t, float dt)
     clearc(0.03f, 0.02f, 0.01f, 1.0f);
 
     lines_set_width(2.0f);
-    lines_set_color(vec4(1.0f, 0.95f, 0.7f, 0.15f));
+    lines_set_color(V4(1.0f, 0.95f, 0.7f, 0.15f));
     for (u32 i = 0; i <= 20; i++)
     {
         float x = (-1.0f + 2.0f * i / 20.0f) * 10.0f;
@@ -298,20 +298,20 @@ void tick(Input io, float t, float dt)
 
     if (draw_covariance)
     {
-        lines_set_color(vec4(0.2f, 0.2f, 1.0f, 1.0f));
+        lines_set_color(V4(0.2f, 0.2f, 1.0f, 1.0f));
         for (u32 i = 0; i < NUM_TARGETS; i++)
         {
             vec2 p = mean_targets[i].position;
             float dx = sqrt(cov_xx[i]);
             float dy = sqrt(cov_yy[i]);
-            lines_add_line(p, p - vec2(dx, 0.0f));
-            lines_add_line(p, p + vec2(dx, 0.0f));
-            lines_add_line(p, p - vec2(0.0f, dy));
-            lines_add_line(p, p + vec2(0.0f, dy));
+            lines_add_line(p, p - V2(dx, 0.0f));
+            lines_add_line(p, p + V2(dx, 0.0f));
+            lines_add_line(p, p - V2(0.0f, dy));
+            lines_add_line(p, p + V2(0.0f, dy));
         }
     }
 
-    persist vec4 other_color = vec4(76.0f, 186.0f, 193.0f, 25.0f) / 255.0f;
+    persist vec4 other_color = V4(76.0f, 186.0f, 193.0f, 25.0f) / 255.0f;
     if (draw_all_realizations)
     {
         lines_set_color(other_color);
@@ -319,24 +319,24 @@ void tick(Input io, float t, float dt)
             draw_targets(realizations[i].targets);
     }
 
-    // lines_set_color(vec4(1.0f, 1.0f, 1.0f, 0.35f));
+    // lines_set_color(V4(1.0f, 1.0f, 1.0f, 0.35f));
     // lines_draw_circle(hunter.position, hunter.observe_radius);
 
     if (draw_mean)
     {
-        lines_set_color(vec4(1.0f, 0.95f, 0.7f, 0.35f));
+        lines_set_color(V4(1.0f, 0.95f, 0.7f, 0.35f));
         for (u32 i = 0; i < NUM_TARGETS; i++)
         {
             lines_add_line(mean_targets[i].position, true_targets[i].position);
         }
-        lines_set_color(vec4(0.3f, 0.9f, 0.4f, 1.0f));
+        lines_set_color(V4(0.3f, 0.9f, 0.4f, 1.0f));
         draw_targets(mean_targets);
     }
 
-    lines_set_color(vec4(1.0f, 0.9f, 0.1f, 1.0f));
+    lines_set_color(V4(1.0f, 0.9f, 0.1f, 1.0f));
     draw_targets(true_targets);
 
-    // lines_set_color(vec4(1.0f, 0.9f, 0.1f, 1.0f));
+    // lines_set_color(V4(1.0f, 0.9f, 0.1f, 1.0f));
     // lines_draw_circle(mean_targets[selected_target].position, 0.5f);
 
     lines_flush();
@@ -352,11 +352,11 @@ void tick(Input io, float t, float dt)
         t_samples[i] = realizations[i].targets[selected_target].angle;
     }
     if (draw_x_histogram)
-        draw_histogram(x_samples, NUM_REALIZATIONS, vec2(10.5f,   0.0f), vec2(4.0f, 5.0f));
+        draw_histogram(x_samples, NUM_REALIZATIONS, V2(10.5f,   0.0f), V2(4.0f, 5.0f));
     if (draw_y_histogram)
-        draw_histogram(y_samples, NUM_REALIZATIONS, vec2(10.5f,  -5.0f), vec2(4.0f, 5.0f));
+        draw_histogram(y_samples, NUM_REALIZATIONS, V2(10.5f,  -5.0f), V2(4.0f, 5.0f));
     if (draw_t_histogram)
-        draw_histogram(t_samples, NUM_REALIZATIONS, vec2(10.5f, -10.0f), vec2(4.0f, 5.0f));
+        draw_histogram(t_samples, NUM_REALIZATIONS, V2(10.5f, -10.0f), V2(4.0f, 5.0f));
 
     ImGui::NewFrame();
     ImGui::Begin("Variables");
