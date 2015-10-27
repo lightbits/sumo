@@ -9,3 +9,4 @@ build/*.obj
 *.sublime-project
 *.sublime-workspace
 assets/3rdparty
+build/generated_meta_code.h

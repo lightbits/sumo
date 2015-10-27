@@ -284,10 +284,11 @@ struct StructMember
 
 void parse_struct(Lexer *lexer)
 {
-    #if 1
+    #if 0
     Token struct_name = get_token(lexer);
     bool parsing = true;
     bool on_member = false;
+    Token member_type = {};
     while (parsing)
     {
         Token token = get_token(lexer);
@@ -295,8 +296,15 @@ void parse_struct(Lexer *lexer)
         {
             case TokenIdentifier:
             {
-                Token member_type = token.type;
-                parse_member(struct_name, member_type, lexer);
+                if (!on_member)
+                {
+                    on_member = true;
+                    member_type = token.type;
+                }
+                else
+                {
+
+                }
             } break;
 
             case TokenEof:
@@ -307,59 +315,50 @@ void parse_struct(Lexer *lexer)
         }
     }
     #else
-    printf("MetaMemberData member_of_%.*s[] = {\n",
-           struct_name.length, struct_name.text);
-    while (parsing)
-    {
+    Token struct_name = get_token(lexer);
         Token token = get_token(lexer);
-        switch (token.type)
+        printf("MetaMemberData member_of_%.*s[] = {\n",
+               struct_name.length, struct_name.text);
+        while (token.type != TokenEof &&
+               token.type != TokenCloseBrace)
         {
-            case TokenIdentifier:
-
-            case TokenComma:
-            case TokenSemicolon:
-            case TokenEof:
-            case TokenAsterisk
-        }
-        if (token.type == TokenIdentifier)
-        {
-            Token member_type = token;
-            Token member_name = {};
-            StructMember first_member = {};
-            StructMember *current_member = &first_member;
-            token = get_token(lexer);
-            while (token.type != TokenEof &&
-                   token.type != TokenSemicolon)
+            if (token.type == TokenIdentifier)
             {
-                if (token.type == TokenComma)
-                {
-                    current_member->next = new StructMember();
-                    current_member = current_member->next;
-                }
-                if (token.type == TokenIdentifier)
-                {
-                    current_member->name = token.text;
-                    current_member->length = token.length;
-                }
+                Token member_type = token;
+                Token member_name = {};
+                StructMember first_member = {};
+                StructMember *current_member = &first_member;
                 token = get_token(lexer);
-            }
+                while (token.type != TokenEof &&
+                       token.type != TokenSemicolon)
+                {
+                    if (token.type == TokenComma)
+                    {
+                        current_member->next = new StructMember();
+                        current_member = current_member->next;
+                    }
+                    if (token.type == TokenIdentifier)
+                    {
+                        current_member->name = token.text;
+                        current_member->length = token.length;
+                    }
+                    token = get_token(lexer);
+                }
 
-            // add_to_seen_meta_types(seen_types, member_type.text, member_type.length);
-
-            StructMember *member = &first_member;
-            while (member)
-            {
-                printf("    { MetaType_%.*s, \"%.*s\", (u32)&(((%.*s*)0)->%.*s) },\n",
-                        member_type.length, member_type.text,
-                        member->length, member->name,
-                        struct_name.length, struct_name.text,
-                        member->length, member->name);
-                member = member->next;
+                StructMember *member = &first_member;
+                while (member)
+                {
+                    printf("    { MetaType_%.*s, \"%.*s\", (u32)&(((%.*s*)0)->%.*s) },\n",
+                            member_type.length, member_type.text,
+                            member->length, member->name,
+                            struct_name.length, struct_name.text,
+                            member->length, member->name);
+                    member = member->next;
+                }
             }
+            token = get_token(lexer);
         }
-        token = get_token(lexer);
-    }
-    printf("};\n");
+        printf("};\n");
     #endif
 }
 
