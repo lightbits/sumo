@@ -2,6 +2,10 @@
 
 int fsm_GetRandomInt()
 {
+    return xor128() % 64;
+    #if 0
+    // TODO: The initial value of index acts as a simulation seed
+    // Make it random
     static int index = 0;
     static int random_numbers[] = {
         0x39,  0x14,  0x28,  0x3c,  0x3c,  0x27,  0x01,  0x25,
@@ -73,6 +77,7 @@ int fsm_GetRandomInt()
     int result = random_numbers[index];
     index = (index + 1) % (sizeof(random_numbers) / sizeof(int));
     return result;
+    #endif
 }
 
 #define Meters 1

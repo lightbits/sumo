@@ -27,6 +27,9 @@ struct GroundRobotModel
     float vl;
     float vr;
     float q;
+
+    vec2 tangent;
+    vec2 forward;
 };
 
 struct GroundRobot
@@ -85,18 +88,35 @@ void init()
 
 void integrate_robot(GroundRobotModel *robot, float dt)
 {
+    // TODO: Proper integration to avoid pulsating radii
     float v = 0.5f * (robot->vl + robot->vr);
     float w = (robot->vr - robot->vl) / (robot->L*0.5f);
+    // robot->x += -v * sin(robot->q) * dt;
+    // robot->y +=  v * cos(robot->q) * dt;
+    if (abs(w) < 0.001f)
+    {
+        robot->x += -v*sin(robot->q)*dt;
+        robot->y +=  v*cos(robot->q)*dt;
+    }
+    else
+    {
+        robot->x += (v / w) * (cos(robot->q + w*dt) - cos(robot->q));
+        robot->y += (v / w) * (sin(robot->q + w*dt) - sin(robot->q));
+    }
     robot->q += w * dt;
-    robot->x += -v * sin(robot->q) * dt;
-    robot->y +=  v * cos(robot->q) * dt;
+
+    robot->tangent = vec2(cos(robot->q), sin(robot->q));
+    robot->forward = vec2(-robot->tangent.y, robot->tangent.x);
 }
 
-void tick_simulator(float t, float dt)
+void tick_simulator(float dt)
 {
+    persist float simulation_time = 0.0f;
+    simulation_time += dt;
     struct CollisionInfo
     {
         int hits;
+        int bumper_hits;
         vec2 resolve_delta;
     };
 
@@ -110,9 +130,10 @@ void tick_simulator(float t, float dt)
         events[i].is_top_touch = 0;
         events[i].is_bumper = 0;
         events[i].target_switch_pin = 0;
-        events[i].elapsed_sim_time = t;
+        events[i].elapsed_sim_time = simulation_time;
 
         collision[i].hits = 0;
+        collision[i].bumper_hits = 0;
         collision[i].resolve_delta = vec2(0.0f, 0.0f);
 
         switch (robots[i].state)
@@ -155,15 +176,23 @@ void tick_simulator(float t, float dt)
                 if (intersection > 0.0f)
                 {
                     collision[i].hits++;
-                    collision[i].resolve_delta += (difference / L) * intersection * 0.5f;
+                    collision[i].resolve_delta += (difference / L) * intersection;
+
+                    // The robot only reacts (in a fsm sense) if the collision
+                    // triggers the bumper sensor in front of the robot. (We
+                    // still resolve physical collisions anyway, though).
+                    // TODO: Determine the angular region that the bumper
+                    // sensor covers (I have assumed 180 degrees).
+                    bool on_bumper = dot(difference, robots[i].model.forward) <= 0.0f;
+                    if (on_bumper)
+                        collision[i].bumper_hits++;
                 }
             }
         }
         if (collision[i].hits > 0)
-        {
             collision[i].resolve_delta *= 1.0f / (float)collision[i].hits;
+        if (collision[i].bumper_hits > 0)
             events[i].is_bumper = 1;
-        }
     }
 
     for (u32 i = 0; i < Num_Robots; i++)
@@ -171,8 +200,8 @@ void tick_simulator(float t, float dt)
         integrate_robot(&robots[i].model, dt);
         if (collision[i].hits > 0)
         {
-            robots[i].model.x += collision[i].resolve_delta.x * 1.05f;
-            robots[i].model.y += collision[i].resolve_delta.y * 1.05f;
+            robots[i].model.x += collision[i].resolve_delta.x * 1.02f;
+            robots[i].model.y += collision[i].resolve_delta.y * 1.02f;
         }
         robots[i].state = fsm_Update(robots[i].state,
                                      &robots[i].internal,
@@ -185,21 +214,19 @@ void tick_simulator(float t, float dt)
 
 void draw_robot(GroundRobotModel *r)
 {
-    vec2 tangent = vec2(cos(r->q), sin(r->q));
     vec2 center = vec2(r->x, r->y);
-    vec2 forward = vec2(-tangent.y, tangent.x);
     lines_draw_circle(center, r->L * 0.5f);
-    lines_draw_line(center - tangent * r->L * 0.5f,
-                    center + tangent * r->L * 0.5f);
+    lines_draw_line(center - r->tangent * r->L * 0.5f,
+                    center + r->tangent * r->L * 0.5f);
     lines_draw_line(center,
-                    center + forward * 0.2f);
+                    center + r->forward * 0.2f);
 }
 
 void tick(Input io, float t, float dt)
 {
-    int speed_multiplier = 20;
+    persist int speed_multiplier = 10;
     for (u32 i = 0; i < speed_multiplier; i++)
-    tick_simulator(t*speed_multiplier, dt);
+    tick_simulator(dt);
 
     float a = (float)WINDOW_HEIGHT/WINDOW_WIDTH;
     lines_set_scale(a/12.0f, 1.0f/12.0f);
@@ -225,6 +252,12 @@ void tick(Input io, float t, float dt)
     for (u32 i = 0; i < Num_Obstacles; i++)
         draw_robot(&obstacles[i].model);
     lines_flush();
+
+    ImGui::NewFrame();
+    ImGui::Begin("Simulation");
+    ImGui::SliderInt("speed", &speed_multiplier, 1, 50);
+    ImGui::End();
+    ImGui::Render();
 }
 
 #include "sumo.cpp"
