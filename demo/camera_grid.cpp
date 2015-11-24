@@ -61,7 +61,7 @@ void main()
     float r = length(sample);
     sample += (-1.0 + 2.0 * noise2f()) * (1.0 + 4.0*r*r) * pixel_size;
     sample = (1.0 + k1*r*r + k2*r*r*r*r) * sample;
-    vec3 film = vec3(sample.x * aspect, sample.y, -focal_distance);
+    vec3 film = vec3(sample.x * aspect, sample.y, focal_distance);
     vec3 origin = (view[3]).xyz;
     vec3 dir = normalize((view * vec4(film, 1.0)).xyz - origin);
 
@@ -70,6 +70,7 @@ void main()
     {
         vec2 floor_texel = vec2(0.5) + 0.5 * plane / vec2(PLANE_SIZE);
         f_color.rgb = texture(channel0, floor_texel).rgb;
+        f_color.rgb *= 1.0 - 0.2*length(quadcoord);
     }
     else
     {
@@ -99,10 +100,30 @@ void tick(Input io, float t, float dt)
     persist float k1 = 0.0f;
     persist float k2 = 0.0f;
 
-    mat4 view = mat_rotate_y(0.0f) *
-                mat_rotate_x(-PI / 2.0f + 0.2f*sin(0.5f*t)) *
-                mat_translate(0.0f, sin(t)*0.2f, camera_height);
+    // mat4 view = mat_rotate_y(0.0f) *
+    //             mat_rotate_x(-PI / 2.0f + 0.2f*sin(0.5f*t)) *
+    //             mat_translate(0.0f, sin(t)*0.2f, camera_height);
 
+    persist float camera_x = 0.0f;
+    persist float camera_y = 0.0f;
+    persist float camera_z = 0.0f;
+    persist float camera_phi = 0.0f; // roll
+    persist float camera_theta = 0.0f; // pitch
+    persist float camera_psi = 0.0f; // yaw
+
+    focal_distance = 0.5f;
+    k1 = 0.1f;
+    k2 = 0.05f;
+    camera_x = 0.6f*sin(t) + 0.03f*sin(5.4f*t);
+    camera_z = 0.6f*cos(t) + 0.03f*cos(5.4f*t);
+    camera_y = 1.3f;
+    camera_phi = PI / 2.0f + 0.001f*sin(50.0f*t);
+    camera_psi = PI / 2.0f + 0.001f*cos(40.5f*t);
+
+    mat4 view = mat_translate(camera_x, camera_y, camera_z) *
+                mat_rotate_z(camera_phi) *
+                mat_rotate_x(camera_theta) *
+                mat_rotate_y(camera_psi);
 
     clearc(1.0f, 1.0f, 1.0f, 1.0f);
     begin(&pass);
@@ -122,7 +143,12 @@ void tick(Input io, float t, float dt)
     ImGui::NewFrame();
     ImGui::Begin("Camera");
     ImGui::SliderFloat("focal_distance", &focal_distance, 0.1f, 3.0f);
-    ImGui::SliderFloat("height", &camera_height, 0.1f, 3.0f);
+    ImGui::SliderFloat("x", &camera_x, 0.1f, 3.0f);
+    ImGui::SliderFloat("y", &camera_y, 0.1f, 3.0f);
+    ImGui::SliderFloat("z", &camera_z, 0.1f, 3.0f);
+    ImGui::SliderAngle("phi", &camera_phi, -180.0f, 180.0f);
+    ImGui::SliderAngle("theta", &camera_theta, -180.0f, 180.0f);
+    ImGui::SliderAngle("psi", &camera_psi, -180.0f, 180.0f);
     if (ImGui::CollapsingHeader("Brown-Conrady coefficients"))
     {
         ImGui::SliderFloat("k1", &k1, -1.0f, 1.0f);
