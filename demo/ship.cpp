@@ -29,57 +29,70 @@ void imgui_float(char *label, float x)
     ImGui::Text(text);
 }
 
+#define UNKNOWN_SIDESLIP
 persist float xt = 100.0f;
 persist float yt = 100.0f;
-persist vec2 vt = normalize(vec2(1.0f, 1.0f)) * 3.0f;
+persist vec2 vt = vec2(0.0f, 0.0f);
+persist vec2 path_tangent = vec2(0.0f, 0.0f);
 
 void path_guidance(float t, float x, float y, float *xd, float *yd)
 {
+    // Constant reference
+    #if 0
     // *xd = 5000.0f;
     // *yd = 5000.0f;
+    #endif
 
+    // Target following
+    #if 1
     vec2 pt = vec2(xt, yt);
+    vt = normalize(vec2(1.0f, 1.0f)) * 3.0f;
     vec2 n = normalize(vec2(vt.x, -vt.y));
     vec2 pd = pt + n * 500.0f;
 
     *xd = pd.x;
     *yd = pd.y;
+    #endif
 
-    // persist u32 i = 0;
-    // const u32 N = 5;
-    // vec2 WP[N] = {
-    //     vec2(-600.0f, 0.0f),
-    //     vec2(4680.0f, 3880.0f),
-    //     vec2(7662.0f, 2248.0f),
-    //     vec2(10644.0f, 3878.0f),
-    //     vec2(13626.0f, 2246.0f)
-    // };
-    // vec2 a = WP[i];
-    // vec2 b = WP[i+1];
-    // vec2 p = vec2(x, y);
-    // float R = 1250;
-    // vec2 r = normalize(b-a);
-    // float B = dot(p-a, r);
-    // float C = dot(p-a,p-a) - R*R;
-    // float D = B*B-C;
-    // if (D < 0)
-    // {
-    //     float s = dot(p-a, r);
-    //     *xd = a.x + r.x*s;
-    //     *yd = a.y + r.y*s;
-    // }
-    // else
-    // {
-    //     float sD = sqrt(D);
-    //     float s = max(B+sD, B-sD);
-    //     *xd = a.x + r.x*s;
-    //     *yd = a.y + r.y*s;
-    // }
-    // if (length(b-p) < R && i < N-2)
-    //     i++;
+    // Path following
+    #if 0
+    persist u32 i = 0;
+    const u32 N = 5;
+    vec2 WP[N] = {
+        vec2(-600.0f, 0.0f),
+        vec2(2000.0f, 5000.0f),
+        vec2(6000.0f, -5000.0f),
+        vec2(10000.0f, 7000.0f),
+        vec2(15000.0f, 4000.0f)
+    };
+    vec2 a = WP[i];
+    vec2 b = WP[i+1];
+    vec2 p = vec2(x, y);
+    float R = 1250;
+    vec2 r = normalize(b-a);
+    float B = dot(p-a, r);
+    float C = dot(p-a,p-a) - R*R;
+    float D = B*B-C;
+    if (D < 0)
+    {
+        float s = dot(p-a, r);
+        *xd = a.x + r.x*s;
+        *yd = a.y + r.y*s;
+    }
+    else
+    {
+        float sD = sqrt(D);
+        float s = max(B+sD, B-sD);
+        *xd = a.x + r.x*s;
+        *yd = a.y + r.y*s;
+    }
+    if (length(b-p) < R && i < N-2)
+        i++;
+    path_tangent = r;
+    #endif
 }
 
-float heading_guidance(float x, float y, float xd, float yd, float u, float v)
+float heading_guidance(float x, float y, float xd, float yd, float u, float v, float dt)
 {
     vec2 pd = vec2(xd, yd);
     vec2 p = vec2(x, y);
@@ -87,16 +100,39 @@ float heading_guidance(float x, float y, float xd, float yd, float u, float v)
     vec2 dp = pd - p;
     float D = 1000.0f;
     float K = 3.0f;
-    float f = clampf(length(dp), 0.0f, D);
+
+    // Use integral path follower
+    // (does not work with target following yet)
+#ifdef UNKNOWN_SIDESLIP
+    persist float ei = 0.0f;
+    vec2 r = path_tangent;
+    vec2 n = vec2(-r.y, r.x);
+    float e = dot(p - pd, n);
+    float ki = 0.001f;
+    ei += ki * e * dt;
+    vec2 eps = r * dot(pd - p, r) - n * (ei+e);
+
     vec2 ve = vec2(0.0f, 0.0f);
-    if (f > D / 100000.0f)
-    {
-        ve = (dp / length(dp)) * f * K / D;
-    }
+    if (length(dp) < D)
+        ve = (eps / D) * K;
+    else
+        ve = (eps / length(eps)) * K;
+
     vec2 vd = vt + ve;
+#else
+    vec2 ve = vec2(0.0f, 0.0f);
+    if (length(dp) < D)
+        ve = (dp / D) * K;
+    else
+        ve = (dp / length(dp)) * K;
+    vec2 vd = vt + ve;
+#endif
 
     float khi_d = atan2(vd.y, vd.x);
     float beta = atan2(v, u);
+#ifdef UNKNOWN_SIDESLIP
+    beta = 0.0f;
+#endif
     float psi_d = khi_d - beta;
     return psi_d;
 }
@@ -218,7 +254,7 @@ void tick(Input io, float t, float dt)
 
         // integrate ship: heading
         {
-            float psi_d0 = heading_guidance(ship.x, ship.y, xd, yd, ship.u, ship.v);
+            float psi_d0 = heading_guidance(ship.x, ship.y, xd, yd, ship.u, ship.v, timestep);
             float dc = heading_controller(psi_d0, ship.psi, ship.r, timestep);
 
             float T = 36;
