@@ -39,8 +39,8 @@ Changelog
 #define TWO_PI 6.28318530718
 #endif
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
+#define m_min(x, y) ((x) < (y) ? (x) : (y))
+#define m_max(x, y) ((x) > (y) ? (x) : (y))
 
 // http://h14s.p5r.org/2012/09/0x5f3759df.html
 float

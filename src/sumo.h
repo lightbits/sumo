@@ -70,7 +70,16 @@ struct TimedBlock
 #include "so_fbo.h"
 #include "so_texture.h"
 #include "so_shader.h"
+
+// TODO: Remove when transitioned to new math lib
+#ifdef USE_NEW_MATH
+#include "so_new_math.h"
+#else
+#define m_vec2 vec2
+#define m_vec4 vec4
 #include "so_math.h"
+#endif
+
 #include "so_noise.h"
 #include "so_map.h"
 #include "so_mesh.h"

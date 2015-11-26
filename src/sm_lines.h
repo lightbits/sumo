@@ -66,12 +66,12 @@ void lines_set_width(float w)
 
 void lines_set_scale(float s)
 {
-    lines_batch.scale = vec2(s, s);
+    lines_batch.scale = m_vec2(s, s);
 }
 
 void lines_set_scale(float x, float y)
 {
-    lines_batch.scale = vec2(x, y);
+    lines_batch.scale = m_vec2(x, y);
 }
 
 void lines_set_color(u32 color)
@@ -93,8 +93,8 @@ void lines_init()
     glBindBuffer(GL_ARRAY_BUFFER, lines_batch.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(lines_Vertex) * LINES_VERTICES_PER_BATCH, 0, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    lines_batch.scale = vec2(1.0f, 1.0f);
-    lines_batch.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    lines_batch.scale = m_vec2(1.0f, 1.0f);
+    lines_batch.color = m_vec4(1.0f, 1.0f, 1.0f, 1.0f);
     lines_batch.vertex_count = 0;
 
     lines_batch.shader = so_load_shader_vf_from_memory(SHADER_LINE_BATCH_VS, SHADER_LINE_BATCH_FS);
@@ -159,11 +159,11 @@ void lines_add_line(vec2 a, vec2 b)
 
 void lines_draw_circle(vec2 center, float radius, u32 segments)
 {
-    vec2 a = center + vec2(radius, 0.0f);
+    vec2 a = center + m_vec2(radius, 0.0f);
     for (u32 i = 1; i <= segments; i++)
     {
         float t = TWO_PI * i / (float)segments;
-        vec2 b = center + vec2(cos(t), sin(t)) * radius;
+        vec2 b = center + m_vec2(cos(t), sin(t)) * radius;
         lines_add_line(a, b);
         a = b;
     }
@@ -187,12 +187,12 @@ void lines_draw_rect(vec2 lower_left, vec2 size, float angle, vec2 centre_of_rot
 {
     float ca = cos(angle);
     float sa = sin(angle);
-    vec2 x = vec2(ca, sa);
-    vec2 y = vec2(-sa, ca);
-    vec2 a = (vec2(0.0f, 0.0f) - centre_of_rotation) * size;
-    vec2 b = (vec2(1.0f, 0.0f) - centre_of_rotation) * size;
-    vec2 c = (vec2(1.0f, 1.0f) - centre_of_rotation) * size;
-    vec2 d = (vec2(0.0f, 1.0f) - centre_of_rotation) * size;
+    vec2 x = m_vec2(ca, sa);
+    vec2 y = m_vec2(-sa, ca);
+    vec2 a = (m_vec2(0.0f, 0.0f) - centre_of_rotation) * size;
+    vec2 b = (m_vec2(1.0f, 0.0f) - centre_of_rotation) * size;
+    vec2 c = (m_vec2(1.0f, 1.0f) - centre_of_rotation) * size;
+    vec2 d = (m_vec2(0.0f, 1.0f) - centre_of_rotation) * size;
     a = x * a.x + y * a.y;
     b = x * b.x + y * b.y;
     c = x * c.x + y * c.y;
@@ -207,9 +207,9 @@ void lines_draw_rect(vec2 lower_left, vec2 size, float angle, vec2 centre_of_rot
 void lines_draw_rect(vec2 lower_left, vec2 size)
 {
     vec2 a = lower_left;
-    vec2 b = lower_left + vec2(size.x, 0.0f);
-    vec2 c = lower_left + vec2(size.x, size.y);
-    vec2 d = lower_left + vec2(0.0f, size.y);
+    vec2 b = lower_left + m_vec2(size.x, 0.0f);
+    vec2 c = lower_left + m_vec2(size.x, size.y);
+    vec2 d = lower_left + m_vec2(0.0f, size.y);
     lines_draw_rect(a, b, c, d);
 }
 
@@ -220,6 +220,6 @@ void lines_draw_line(vec2 a, vec2 b)
 
 void lines_draw_line(float x1, float y1, float x2, float y2)
 {
-    lines_add_line(vec2(x1, y1), vec2(x2, y2));
+    lines_add_line(m_vec2(x1, y1), m_vec2(x2, y2));
 }
 #endif // SM_LINES_IMPLEMENTATION

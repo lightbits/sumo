@@ -12,7 +12,6 @@ mat4 camera_holdclick(Input io, float dt, float move_speed)
     persist r32 dtheta = 0.0f;
     persist r32 phi = 0.0f;
     persist r32 dphi = 0.0f;
-    persist vec3 pos = vec3(0.0f, 0.0f, 0.0f);
     persist r32 x = 0.0f;
     persist r32 dx = 0.0f;
     persist r32 y = 0.0f;

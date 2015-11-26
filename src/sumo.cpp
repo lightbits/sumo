@@ -188,7 +188,7 @@ void take_screenshot(SDL_Window *window)
     char filename[64] = {};
     char *c = filename;
     u32 len = strlen(WINDOW_TITLE);
-    for (u32 i = 0; i < min(len, 40); i++)
+    for (u32 i = 0; i < m_min(len, 40); i++)
     {
         if (WINDOW_TITLE[i] == ' ') *c = '_';
         else *c = tolower(WINDOW_TITLE[i]);

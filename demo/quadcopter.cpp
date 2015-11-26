@@ -15,16 +15,24 @@
 * Trajectory following
 */
 
+#define USE_NEW_MATH
 #include "sumo.h"
 #include <stdio.h>
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
-#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
 RenderPass pass;
 MeshAsset mesh_quad;
 GLuint tex_quad;
+
+struct State
+{
+    vec3 p_n; // Position in inertial frame
+    vec3 v_n; // Velocity in inertial frame
+    vec4 q;   // Orientation unit quaternion
+    vec3 w_b; // Angular velocity in body frame
+};
 
 void init()
 {
