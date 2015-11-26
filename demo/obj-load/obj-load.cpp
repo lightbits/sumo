@@ -1,155 +1,12 @@
 #include "sumo.h"
-#define SO_ASSET_IMPLEMENTATION
-#include "so_asset.h"
 #include <stdio.h>
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
-// TODO: Add to shared library
-char*
-sm_read_file(char *filename)
-{
-    FILE *file = fopen(filename, "rb");
-    if (!file)
-    {
-        printf("Failed to open file %s\n", filename);
-        exit(-1);
-    }
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    rewind(file);
-    char *data = new char[size];
-    fread(data, 1, size, file);
-    fclose(file);
-    return data;
-}
-
-// TODO: Add to so_texture
-GLuint
-so_make_tex3d(void *data,
-              int width, int height, int depth,
-              GLenum internal_format,
-              GLenum data_format,
-              GLenum data_type,
-              GLenum min_filter,
-              GLenum mag_filter,
-              GLenum wrap_s,
-              GLenum wrap_t,
-              GLenum wrap_r)
-{
-    GLuint result = 0;
-    glGenTextures(1, &result);
-    glBindTexture(GL_TEXTURE_3D, result);
-    glTexImage3D(GL_TEXTURE_3D, 0, internal_format,
-                 width, height, depth, 0,
-                 data_format, data_type, data);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, min_filter);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, mag_filter);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, wrap_s);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, wrap_t);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, wrap_r);
-    glBindTexture(GL_TEXTURE_3D, 0);
-
-    // TODO: Undef when added to so_texture
-    #if 0
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        const char *reason = soi_gl_error_message(error);
-        printf("Failed to make 3D texture: %s\n", reason);
-        result = 0;
-    }
-    #endif
-    return result;
-}
-
-struct so_LoadedMesh
-{
-    GLuint positions;
-    GLuint normals;
-    GLuint texels;
-    GLuint indices;
-
-    struct Buffer
-    {
-        char *data;
-        r32 *positions;
-        r32 *normals;
-        r32 *texels;
-        u32 *indices;
-    } buffer;
-
-    u32 num_positions;
-    u32 num_normals;
-    u32 num_texels;
-    u32 num_indices;
-};
-
-so_LoadedMesh load_mesh(char *name)
-{
-    // TODO: File not found
-    char full_name[256];
-    sprintf(full_name, "assets/models/%s/%s.sumo_asset", name, name);
-    char *data = sm_read_file(full_name);
-
-    so_LoadedMesh result = {};
-    result.buffer.data = data;
-    so_read_mesh_from_memory(data,
-        &result.buffer.positions,
-        &result.buffer.normals,
-        &result.buffer.texels,
-        &result.buffer.indices,
-        &result.num_positions,
-        &result.num_normals,
-        &result.num_texels,
-        &result.num_indices);
-
-    // if normalize
-    float max_position = 0.0f;
-    for (u32 i = 0; i < result.num_positions; i++)
-    {
-        float a = abs(result.buffer.positions[i]);
-        if (a > max_position)
-            max_position = a;
-    }
-
-    for (u32 i = 0; i < result.num_positions; i++)
-    {
-        result.buffer.positions[i] /= max_position;
-    }
-
-    printf("Loaded mesh %s (%dp/%dn/%dt/%di)\n",
-           name,
-           result.num_positions / 3,
-           result.num_normals / 3,
-           result.num_texels / 2,
-           result.num_indices);
-
-    result.positions = make_buffer(GL_ARRAY_BUFFER,
-                                   result.num_positions * sizeof(GLfloat),
-                                   result.buffer.positions, GL_STATIC_DRAW);
-
-    if (result.num_normals)
-        result.normals = make_buffer(GL_ARRAY_BUFFER,
-                                     result.num_normals * sizeof(GLfloat),
-                                     result.buffer.normals, GL_STATIC_DRAW);
-
-    if (result.num_texels)
-        result.texels = make_buffer(GL_ARRAY_BUFFER,
-                                       result.num_texels * sizeof(GLfloat),
-                                       result.buffer.texels, GL_STATIC_DRAW);
-
-    if (result.num_indices)
-        result.indices = make_buffer(GL_ELEMENT_ARRAY_BUFFER,
-                                     result.num_indices * sizeof(GLuint),
-                                     result.buffer.indices, GL_STATIC_DRAW);
-    return result;
-}
-
 #if 0
-so_LoadedMesh mitsuba;
+MeshAsset mitsuba;
 GLuint diffusemap;
 RenderPass pass;
 
@@ -195,7 +52,7 @@ void tick(Input io, float t, float dt)
 
 #include "sumo.cpp"
 #else
-so_LoadedMesh mesh;
+MeshAsset mesh;
 GLuint diffusemap;
 RenderPass pass;
 RenderPass sdf_pass;
@@ -231,7 +88,13 @@ float ud_triangle( vec3 p, vec3 a, vec3 b, vec3 c )
 
 void init()
 {
-    mesh = load_mesh("sdftest");
+    mesh = load_mesh("assets/models/sdftest/sdftest.sumo_asset", MESH_NORMALIZE);
+    printf("Loaded mesh (%dp/%dn/%dt/%di)\n",
+           mesh.num_positions / 3,
+           mesh.num_normals / 3,
+           mesh.num_texels / 2,
+           mesh.num_indices);
+
     pass = load_render_pass("demo/obj-load/diffuse.vs",
                             "demo/obj-load/diffuse.fs");
     sdf_pass = load_render_pass("demo/obj-load/sdfvis.vs",
@@ -270,7 +133,7 @@ void init()
     fwrite((char*)sdf.values, sizeof(char), sizeof(r32)*SDF_RES*SDF_RES*SDF_RES, f);
     fclose(f);
 #else
-    float *sdf_data = (float*)sm_read_file("demo/obj-load/temp.sdf");
+    float *sdf_data = (float*)so_read_file("demo/obj-load/temp.sdf");
     for (u32 i = 0; i < SDF_RES*SDF_RES*SDF_RES; i++)
         sdf.values[i] = sdf_data[i];
 #endif
@@ -282,28 +145,6 @@ void init()
                                 GL_CLAMP_TO_EDGE,
                                 GL_CLAMP_TO_EDGE,
                                 GL_CLAMP_TO_EDGE);
-}
-
-void sm_draw_quad()
-{
-    persist bool loaded = false;
-    persist GLuint buffer = 0;
-    if (!loaded)
-    {
-        float data[] = {
-            -1.0f, -1.0f,
-            +1.0f, -1.0f,
-            +1.0f, +1.0f,
-            +1.0f, +1.0f,
-            -1.0f, +1.0f,
-            -1.0f, -1.0f
-        };
-        buffer = make_buffer(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-        loaded = 1;
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    attribfv("position", 2, 2, 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void tick(Input io, float t, float dt)
@@ -368,7 +209,7 @@ void tick(Input io, float t, float dt)
     uniformf("depth", 0.0f + 0.3f * sin(t));
     uniformf("projection", projection);
     uniformf("view", view);
-    sm_draw_quad();
+    so_draw_fullscreen_quad();
 }
 
 #include "sumo.cpp"

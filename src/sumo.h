@@ -10,6 +10,7 @@ typedef uint64_t    u64;
 typedef uint32_t    u32;
 typedef uint16_t    u16;
 typedef uint8_t     u08;
+typedef int64_t     s64;
 typedef int32_t     s32;
 typedef int16_t     s16;
 typedef int8_t      s08;
@@ -75,6 +76,8 @@ struct TimedBlock
 #include "so_mesh.h"
 #include "imgui/imgui.h"
 
+// Map type definitions
+// ..............................................................
 typedef Map(r32) Map_r32;
 typedef Map(u32) Map_u32;
 typedef Map(u16) Map_u16;
@@ -83,6 +86,41 @@ typedef Map(s32) Map_s32;
 typedef Map(s16) Map_s16;
 typedef Map(s08) Map_s08;
 
+// Common file operations
+// ..............................................................
+char *so_read_file(char *filename)
+{
+    SDL_RWops *rw = SDL_RWFromFile(filename, "rb");
+    if (!rw)
+    {
+        // Failed to open file
+        ASSERT(false);
+    }
+
+    s64 size_in_bytes = SDL_RWsize(rw);
+
+    // Allocate + 1 for null terminator
+    char *buffer = (char*)malloc(size_in_bytes + 1);
+
+    s64 bytes_read = 0;
+    while (bytes_read < size_in_bytes)
+    {
+        char *position = buffer + bytes_read;
+        s64 remaining = size_in_bytes - bytes_read;
+        bytes_read += SDL_RWread(rw, position, 1, remaining);
+    }
+    SDL_RWclose(rw);
+    if (bytes_read != size_in_bytes)
+    {
+        // Failed to read entire file
+        ASSERT(false);
+    }
+    buffer[bytes_read] = '\0';
+    return buffer;
+}
+
+// Common gl operations
+// ..............................................................
 void clearc(float r, float g, float b, float a)
 {
     glClearColor(r, g, b, a);
@@ -148,7 +186,6 @@ void blend_mode(bool on,
     }
 }
 
-// TODO: Make mouse pos/rel normalized to [0, 1]?
 struct Input
 {
     struct Key
@@ -158,8 +195,9 @@ struct Input
     } key;
     struct Mouse
     {
-        vec2 pos;
-        vec2 rel;
+        vec2 pos; // Position in pixels [0, 0] at top-left window corner
+        vec2 ndc; // Position in pixels mapped from [0, w]x[0, h] -> [-1, +1]x[+1, -1]
+        vec2 rel; // Movement since last mouse event
         struct Button
         {
             bool down;
@@ -173,25 +211,36 @@ struct Input
     } mouse;
 };
 
-enum CubemapFormat
-{
-    CubemapCrossLR,
-    CubemapCrossTB
-};
-GLuint load_cubemap(char *path,
-                    CubemapFormat format,
-                    GLenum min_filter,
-                    GLenum mag_filter,
-                    GLenum wrap_r,
-                    GLenum wrap_s,
-                    GLenum wrap_t,
-                    GLenum internal_format,
-                    GLenum data_type,
-                    GLenum data_format);
-
 // Include Sumo APIs
+// ..............................................................
+#include "sm_cubemap.h"
+#include "sm_asset.h"
 #include "sm_pass.h"
 #include "sm_camera.h"
 #include "sm_lines.h"
+
+// Higher level convenience functions that may use the above APIs
+// ..............................................................
+void so_draw_fullscreen_quad()
+{
+    persist bool loaded = false;
+    persist GLuint buffer = 0;
+    if (!loaded)
+    {
+        float data[] = {
+            -1.0f, -1.0f,
+            +1.0f, -1.0f,
+            +1.0f, +1.0f,
+            +1.0f, +1.0f,
+            -1.0f, +1.0f,
+            -1.0f, -1.0f
+        };
+        buffer = make_buffer(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
+        loaded = 1;
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    attribfv("position", 2, 2, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
 
 #endif

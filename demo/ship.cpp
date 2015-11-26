@@ -5,18 +5,6 @@
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
-void lines_draw_circle(vec2 p, float r)
-{
-    vec2 points[32] = {};
-    for (u32 i = 0; i < 32; i++)
-    {
-        float a = TWO_PI * i / 31.0f;
-        vec2 d = vec2(cos(a), sin(a)) * r;
-        points[i] = p + d;
-    }
-    lines_draw_poly(points, 32);
-}
-
 void init()
 {
     lines_init();
@@ -29,7 +17,7 @@ void imgui_float(char *label, float x)
     ImGui::Text(text);
 }
 
-#define UNKNOWN_SIDESLIP
+// #define UNKNOWN_SIDESLIP
 persist float xt = 100.0f;
 persist float yt = 100.0f;
 persist vec2 vt = vec2(0.0f, 0.0f);

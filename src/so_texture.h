@@ -49,6 +49,18 @@ so_make_tex2d(void *data,
               GLenum wrap_t);
 
 extern GLuint
+so_make_tex3d(void *data,
+              int width, int height, int depth,
+              GLenum internal_format,
+              GLenum data_format,
+              GLenum data_type,
+              GLenum min_filter,
+              GLenum mag_filter,
+              GLenum wrap_s,
+              GLenum wrap_t,
+              GLenum wrap_r);
+
+extern GLuint
 so_load_png_from_memory(const void *png_data,
                         int png_size,
                         GLenum min_filter,
@@ -136,6 +148,41 @@ so_load_tex2d(char *path,
     if (out_width)    *out_width = width;
     if (out_height)   *out_height = height;
     stbi_image_free(data);
+    return result;
+}
+
+GLuint
+so_make_tex3d(void *data,
+              int width, int height, int depth,
+              GLenum internal_format,
+              GLenum data_format,
+              GLenum data_type,
+              GLenum min_filter,
+              GLenum mag_filter,
+              GLenum wrap_s,
+              GLenum wrap_t,
+              GLenum wrap_r)
+{
+    GLuint result = 0;
+    glGenTextures(1, &result);
+    glBindTexture(GL_TEXTURE_3D, result);
+    glTexImage3D(GL_TEXTURE_3D, 0, internal_format,
+                 width, height, depth, 0,
+                 data_format, data_type, data);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, min_filter);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, mag_filter);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, wrap_s);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, wrap_t);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, wrap_r);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        const char *reason = soi_gl_error_message(error);
+        printf("Failed to make 3D texture: %s\n", reason);
+        result = 0;
+    }
     return result;
 }
 

@@ -104,6 +104,12 @@ at the end of your prototyping app.
 #define SO_MESH_IMPLEMENTATION
 #include "so_mesh.h"
 
+#define SM_CUBEMAP_IMPLEMENTATION
+#include "sm_cubemap.h"
+
+#define SM_ASSET_IMPLEMENTATION
+#include "sm_asset.h"
+
 #define SM_PASS_IMPLEMENTATION
 #include "sm_pass.h"
 
@@ -116,7 +122,6 @@ at the end of your prototyping app.
 #include "opengl/gl_core_4_3.c"
 #include "imgui/imgui.cpp"
 #include "gui.cpp"
-#include "cubemap.cpp"
 
 // As mentioned, here we take advantage of single
 // compilation unit mode to get the number of counters
@@ -325,6 +330,8 @@ int main(int argc, char **argv)
                     break;
             }
         }
+        input.mouse.ndc.x = -1.0f + 2.0f * input.mouse.pos.x / (float)WINDOW_WIDTH;
+        input.mouse.ndc.y = +1.0f - 2.0f * input.mouse.pos.y / (float)WINDOW_HEIGHT;
 
         tick(input, elapsed_time, delta_time);
         gui_tick(delta_time);
