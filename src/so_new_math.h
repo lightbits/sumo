@@ -143,9 +143,13 @@ template <typename T> struct Matrix<T, 4, 4> {
 // Convenience functions for constructing matrices and
 // vectors, from components or other vectors.
 
+vec2 m_vec2(float s)                            { vec2 result = { s, s       }; return result; }
+vec3 m_vec3(float s)                            { vec3 result = { s, s, s    }; return result; }
+vec4 m_vec4(float s)                            { vec4 result = { s, s, s, s }; return result; }
 vec2 m_vec2(float x, float y)                   { vec2 result = { x, y       }; return result; }
 vec3 m_vec3(float x, float y, float z)          { vec3 result = { x, y, z    }; return result; }
 vec4 m_vec4(float x, float y, float z, float w) { vec4 result = { x, y, z, w }; return result; }
+vec4 m_vec4(vec3 xyz, float w)                  { vec4 result = { xyz.x, xyz.y, xyz.z, w }; return result; }
 
 template <typename T, int n>
 Matrix<T, n, n> m_identity_()
@@ -270,6 +274,22 @@ Matrix<T, ra, cb> operator *(Matrix<T, ra, ca> a,
         }
         entry++;
     }
+    return result;
+}
+
+template <typename T, int r, int c>
+Matrix<T, r, c> operator +(Matrix<T, r, c> a, Matrix<T, r, c> b)
+{
+    Matrix<T, r, c> result = {};
+    for (int i = 0; i < r*c; i++) result.data[i] = a.data[i] + b.data[i];
+    return result;
+}
+
+template <typename T, int r, int c>
+Matrix<T, r, c> operator -(Matrix<T, r, c> a, Matrix<T, r, c> b)
+{
+    Matrix<T, r, c> result = {};
+    for (int i = 0; i < r*c; i++) result.data[i] = a.data[i] - b.data[i];
     return result;
 }
 
@@ -487,7 +507,7 @@ float m_fast_inv_sqrt(float x)
 }
 
 template <int n>
-float m_normalize(Vector<float, n> v)
+Vector<float, n> m_normalize(Vector<float, n> v)
 {
     Vector<float, n> result = v * m_fast_inv_sqrt(m_dot(v, v));
     return result;
@@ -509,6 +529,8 @@ float m_clamp(float x, float low, float high)
 {
     return x < low ? low : (x > high ? high : x);
 }
+
+float m_square(float x) { return x*x; }
 
 // return: Linear mapping from [t0, t1] to [y0, y1]
 float m_map(float t0, float t1, float t, float y0, float y1)
@@ -540,6 +562,13 @@ Vector<float, n> m_mix(Vector<float, n> low,
 }
 
 ///////////////// Linear algebra /////////////////
+vec3 m_cross(vec3 a, vec3 b)
+{
+    return m_vec3(a.y*b.z-a.z*b.y,
+                  a.z*b.x-a.x*b.z,
+                  a.x*b.y-a.y*b.x);
+}
+
 // return: The skew-symmetric matrix form of the
 //         cross product operator applied by v.
 mat3 m_skew(vec3 v)
@@ -559,8 +588,8 @@ vec3 m_orthogonal_vector(vec3 v)
                                    : m_vec3(0.0, -v.z, v.y);
 }
 
-// return: A transformation matrix in SO3 (rotation and translation)
-mat4 m_so3(mat3 R, vec3 r)
+// return: A transformation matrix in SE3 (rotation and translation)
+mat4 m_se3(mat3 R, vec3 r)
 {
     mat4 result = m_id4();
     result.a1.xyz = R.a1;
@@ -571,11 +600,45 @@ mat4 m_so3(mat3 R, vec3 r)
 }
 
 // return: The inverse of a SO3 matrix
-mat4 m_so3_inverse(mat4 m)
+mat4 m_se3_inverse(mat4 m)
 {
     mat3 R = m_transpose(m_mat3(m));
     vec3 r = -R * m.a4.xyz;
-    return m_so3(R, r);
+    return m_se3(R, r);
+}
+
+///////////////// Unit quaternions /////////////////
+typedef vec4 quat;
+
+// return: The quaternion describing the rotation of
+// _angle_ radians about a normalized axis _axis_.
+quat m_quat_from_angle_axis(vec3 axis, float angle)
+{
+    quat result = {};
+    float s = sin(angle/2.0f);
+    float c = cos(angle/2.0f);
+    result.x = axis.x*s;
+    result.y = axis.y*s;
+    result.z = axis.z*s;
+    result.w = c;
+    return result;
+}
+
+// return: The SO3 rotation matrix of q
+mat3 m_quat_to_so3(quat q)
+{
+    mat3 e_skew = m_skew(q.xyz);
+    mat3 result = m_id3() + 2.0f*q.w*e_skew + 2.0f*e_skew*e_skew;
+    return result;
+}
+
+// return: The quaternion product q MUL r
+quat m_quat_mul(quat q, quat r)
+{
+    quat result = {};
+    result.w = q.w*r.w - m_dot(q.xyz, r.xyz);
+    result.xyz = q.w*r.xyz + r.w*q.xyz + m_skew(q.xyz)*r.xyz;
+    return result;
 }
 
 mat4
