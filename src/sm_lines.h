@@ -11,6 +11,7 @@ void lines_flush    ();
 void lines_add_point(vec2 p);
 void lines_add_line (vec2 a, vec2 b);
 void lines_draw_poly(vec2 *points, u32 count);
+void lines_draw_circle(float x, float y, float radius, u32 segments=16);
 void lines_draw_circle(vec2 center, float radius, u32 segments=16);
 void lines_draw_rect(vec2 a, vec2 b, vec2 c, vec2 d);
 void lines_draw_rect(vec2 lower_left, vec2 size, float angle, vec2 centre_of_rotation);
@@ -155,6 +156,11 @@ void lines_add_line(vec2 a, vec2 b)
         lines_flush();
     lines_add_point(a);
     lines_add_point(b);
+}
+
+void lines_draw_circle(float x, float y, float radius, u32 segments)
+{
+    lines_draw_circle(vec2(x, y), radius, segments);
 }
 
 void lines_draw_circle(vec2 center, float radius, u32 segments)
