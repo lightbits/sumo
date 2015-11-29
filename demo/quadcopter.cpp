@@ -39,6 +39,7 @@ struct State
     vec3 p_n; // Position in inertial frame
     vec3 v_n; // Velocity in inertial frame
     quat q;   // Orientation unit quaternion
+    quat qd;  // Desired orientation (TODO: DEBUG, remove)
     vec3 w_b; // Angular velocity in body frame
 
     // System inputs
@@ -100,6 +101,15 @@ void ode_integrate(State *state, float dt)
 
         state->props[i].w = w;
     }
+    // Control law (TODO: Optimal control allocation using propellers)
+    mat3 Kd = state->I * TWO_PI;
+    mat3 Kp = 10.0f*Kd;
+    quat qd = state->qd;
+    Matrix<float,4,3> T = m_quat_mul_matrix(state->q);
+    t_b = - m_cross(state->I*state->w_b, state->w_b)
+          - Kd*state->w_b
+          - Kp*0.5f*(m_transpose(T)*(state->q-qd));
+
     f_n += state->M*m_vec3(0.0f, 0.0f, -9.81f);
 
     // Dynamic differential equations
@@ -108,7 +118,7 @@ void ode_integrate(State *state, float dt)
     vec3 Dw_b = I_inv*(t_b+m_cross(state->I*state->w_b, state->w_b));
 
     // Kinematic differential equation
-    quat Dq = 0.5f * m_quat_mul(state->q, m_vec4(state->w_b, 0.0f));
+    quat Dq = 0.5f * T * state->w_b;
 
     // Forward Euler integration
     state->p_n += Dp_n*dt;
@@ -120,7 +130,20 @@ void ode_integrate(State *state, float dt)
     state->q = m_normalize(state->q);
 }
 
-State state;
+static State state;
+
+#define Log_Entries 256
+struct History
+{
+    float qx[Log_Entries];
+    float qy[Log_Entries];
+    float qz[Log_Entries];
+    float qw[Log_Entries];
+    float t[Log_Entries];
+};
+
+History history;
+u32 log_index;
 
 void init()
 {
@@ -145,7 +168,8 @@ void init()
     state.p_n = m_vec3(0.0f, 0.0f, 0.0f);
     state.v_n = m_vec3(0.0f, 0.0f, 0.0f);
     state.w_b = m_vec3(0.0f, 0.0f, 0.0f);
-    state.q = m_vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    state.q = m_quat_from_angle_axis(m_vec3(0.0f, 0.0f, 1.0f), PI/4.0f);
+    // state.q = m_vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     // See i.e. http://blog.oscarliang.net/how-to-choose-motor-and-propeller-for-quadcopter/
     // for coefficients
@@ -184,43 +208,55 @@ void init()
     mesh_quad = load_mesh("assets/models/quadcopter/quadcopter.sumo_asset");
     tex_quad = so_load_tex2d("assets/models/quadcopter/quadcopter.png", 0, 0,
                              GL_NEAREST, GL_NEAREST);
+
+    log_index = 0;
+    memset(history.qx, 0, sizeof(history.qx));
+    memset(history.qy, 0, sizeof(history.qy));
+    memset(history.qz, 0, sizeof(history.qz));
+    memset(history.qw, 0, sizeof(history.qw));
+    memset(history.t, 0, sizeof(history.t));
+}
+
+void add_history_entry(quat q, float t)
+{
+    if (log_index == Log_Entries)
+        return;
+    history.qx[log_index] = q.x;
+    history.qy[log_index] = q.y;
+    history.qz[log_index] = q.z;
+    history.qw[log_index] = q.w;
+    history.t[log_index] = t;
+    log_index++;
+    // log_index = (log_index + 1) % Log_Entries;
 }
 
 void tick(Input io, float t, float dt)
 {
+    persist float euler_x = 0.0f;
+    persist float euler_y = 0.0f;
+    persist float euler_z = 0.0f;
+
+    state.qd = m_quat_from_euler(euler_x, euler_y, euler_z);
+
     state.props[0].u = 2.5f;
     state.props[1].u = 2.5f;
     state.props[2].u = 2.5f;
     state.props[3].u = 2.5f;
 
-    if (io.key.down['w'])
-        state.props[0].u += 0.215f;
-    if (io.key.down['a'])
-        state.props[1].u += 0.215f;
-    if (io.key.down['s'])
-        state.props[2].u += 0.215f;
-    if (io.key.down['d'])
-        state.props[3].u += 0.215f;
-    if (io.key.down['n'])
-    {
-        state.props[0].u += 0.02f*frand();
-        state.props[1].u += 0.02f*frand();
-        state.props[2].u += 0.02f*frand();
-        state.props[3].u += 0.02f*frand();
-    }
+    u32 integration_steps = 50;
+    for (u32 i = 0; i < integration_steps; i++)
+        ode_integrate(&state, dt/integration_steps);
 
-    ode_integrate(&state, dt);
-
-    clearc(0.35f, 0.55f, 1.0f, 1.0f);
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 30.0f);
     // mat4 view = camera_holdclick(io, dt);
-    mat4 view = mat_translate(0.0f, 0.0f, -5.0f) * mat_rotate_x(0.7f) * mat_rotate_y(0.2f);
+    mat4 view = mat_translate(0.0f, 0.0f, -5.0f) * mat_rotate_x(0.7f) * mat_rotate_y(0.0f);
+    // mat4 model = mat_rotate_x(-PI/2.0f)*m_se3(m_quat_to_so3(state.q), m_vec3(0.0f))*mat_rotate_x(PI/2.0f)*mat_scale(0.5f);
     mat4 model = mat_rotate_x(-PI/2.0f)*m_se3(m_quat_to_so3(state.q), state.p_n)*mat_rotate_x(PI/2.0f)*mat_scale(0.5f);
     begin(&pass);
     depth_test(true, GL_LEQUAL);
     depth_write(true);
     blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    clear(0.35f, 0.55f, 1.0f, 1.0f, 1.0f);
+    clear(0.0f, 0.01f, 0.05f, 1.0f, 1.0f);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex_quad);
     uniformf("projection", projection);
@@ -235,6 +271,25 @@ void tick(Input io, float t, float dt)
     attribfv("texel", 2, 2, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh_quad.indices);
     glDrawElements(GL_TRIANGLES, mesh_quad.num_indices, GL_UNSIGNED_INT, 0);
+
+    add_history_entry(state.q, t);
+
+    ImGui::NewFrame();
+    ImGui::Begin("State");
+    if (ImGui::CollapsingHeader("Desired orientation"))
+    {
+        ImGui::SliderAngle("ex", &euler_x);
+        ImGui::SliderAngle("ey", &euler_y);
+        ImGui::SliderAngle("ez", &euler_z);
+    }
+    ImGui::End();
+    ImGui::Begin("Plots");
+    ImGui::PlotLines("qx", history.qx, Log_Entries, 0, 0, -1.0f, +1.0f, ImVec2(0, 100));
+    ImGui::PlotLines("qy", history.qy, Log_Entries, 0, 0, -1.0f, +1.0f, ImVec2(0, 100));
+    ImGui::PlotLines("qz", history.qz, Log_Entries, 0, 0, -1.0f, +1.0f, ImVec2(0, 100));
+    ImGui::PlotLines("qw", history.qw, Log_Entries, 0, 0, -1.0f, +1.0f, ImVec2(0, 100));
+    ImGui::End();
+    ImGui::Render();
 }
 
 #include "sumo.cpp"

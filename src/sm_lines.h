@@ -160,7 +160,7 @@ void lines_add_line(vec2 a, vec2 b)
 
 void lines_draw_circle(float x, float y, float radius, u32 segments)
 {
-    lines_draw_circle(vec2(x, y), radius, segments);
+    lines_draw_circle(m_vec2(x, y), radius, segments);
 }
 
 void lines_draw_circle(vec2 center, float radius, u32 segments)

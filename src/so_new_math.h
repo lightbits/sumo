@@ -293,10 +293,18 @@ Matrix<T, r, c> operator -(Matrix<T, r, c> a, Matrix<T, r, c> b)
     return result;
 }
 
-template <typename T, int r, int c>
-Matrix<T, r, c> operator *(Matrix<T, r, c> a, T s)
+template <int r, int c>
+Matrix<double, r, c> operator *(Matrix<double, r, c> a, double s)
 {
-    Matrix<T, r, c> result = {};
+    Matrix<double, r, c> result = {};
+    for (int i = 0; i < r*c; i++) result.data[i] = a.data[i] * s;
+    return result;
+}
+
+template <int r, int c>
+Matrix<float, r, c> operator *(Matrix<float, r, c> a, float s)
+{
+    Matrix<float, r, c> result = {};
     for (int i = 0; i < r*c; i++) result.data[i] = a.data[i] * s;
     return result;
 }
@@ -469,6 +477,27 @@ T m_dot(tvec a, tvec b)
     return result;
 }
 
+template<typename T>
+void m_vec_max_(T *data, int n, T *max_component, int *max_index)
+{
+    int maxi = 0;
+    T maxc = data[maxi];
+    for (int i = 1; i < n; i++)
+    {
+        if (data[i] > maxc)
+        {
+            maxc = data[i];
+            maxi = i;
+        }
+    }
+    if (max_component)
+        *max_component = maxc;
+    if (max_index)
+        *max_index = maxi;
+}
+
+#define m_vec_max(vec, cmp, ind) m_vec_max_((vec).data, sizeof((vec).data)/sizeof((vec).data[0]), cmp, ind)
+
 #undef vec_template
 #undef tvec
 
@@ -608,6 +637,9 @@ mat4 m_se3_inverse(mat4 m)
 }
 
 ///////////////// Unit quaternions /////////////////
+// Quaternions are represented as a vec4, with the
+// xyz components representing the imaginary part
+// and w component representing the real part.
 typedef vec4 quat;
 
 // return: The quaternion describing the rotation of
@@ -621,6 +653,69 @@ quat m_quat_from_angle_axis(vec3 axis, float angle)
     result.y = axis.y*s;
     result.z = axis.z*s;
     result.w = c;
+    return result;
+}
+
+// return: A quaternion describing the rotation
+// represented by the given Euler angles that
+// parametrize the rotation matrix given by
+//   R = Rx(ex)Ry(ey)Rz(ez)
+quat m_quat_from_euler(float ex, float ey, float ez)
+{
+    // Implements Shepperd's method
+    float cz = cos(ez); float sz = sin(ez);
+    float cy = cos(ey); float sy = sin(ey);
+    float cx = cos(ex); float sx = sin(ex);
+
+    float R11 = cy*cz;
+    float R12 = cz*sx*sy - cx*sz;
+    float R13 = sx*sz + cx*cz*sy;
+    float R21 = cy*sz;
+    float R22 = cx*cz + sx*sy*sz;
+    float R23 = cx*sy*sz - cz*sx;
+    float R31 = -sy;
+    float R32 = cy*sx;
+    float R33 = cx*cy;
+
+    float T = R11 + R22 + R33;
+    vec4 v = { T, R11, R22, R33 };
+    float rii; int i;
+    m_vec_max(v, &rii, &i);
+
+    float z0,z1,z2,z3;
+
+    if (i == 0)
+    {
+        z0 = sqrt(1.0f + 2.0f*rii - T);
+        z1 = (R32 - R23) / z0;
+        z2 = (R13 - R31) / z0;
+        z3 = (R21 - R12) / z0;
+    }
+    else if (i == 1)
+    {
+        z1 = sqrt(1.0f + 2.0f*rii - T);
+        z0 = (R32 - R23) / z1;
+        z2 = (R21 + R12) / z1;
+        z3 = (R13 + R31) / z1;
+    }
+    else if (i == 2)
+    {
+        z2 = sqrt(1.0f + 2.0f*rii - T);
+        z0 = (R13 - R31) / z2;
+        z1 = (R21 + R12) / z2;
+        z3 = (R32 + R23) / z2;
+    }
+    else
+    {
+        z3 = sqrt(1.0f + 2.0f*rii - T);
+        z0 = (R21 - R12) / z3;
+        z1 = (R13 + R31) / z3;
+        z2 = (R32 + R23) / z3;
+    }
+
+    quat result;
+    result.xyz = 0.5f * m_vec3(z1, z2, z3);
+    result.w = 0.5f* z0;
     return result;
 }
 
@@ -638,6 +733,28 @@ quat m_quat_mul(quat q, quat r)
     quat result = {};
     result.w = q.w*r.w - m_dot(q.xyz, r.xyz);
     result.xyz = q.w*r.xyz + r.w*q.xyz + m_skew(q.xyz)*r.xyz;
+    return result;
+}
+
+// return: The matrix which when left-multiplied by a vector v=(x,y,z)
+// produces the same result as m_quat_mul(q, m_vec4(v, 0)).
+Matrix<float,4,3> m_quat_mul_matrix(quat q)
+{
+    Matrix<float,4,3> result = {};
+    *m_element(&result, 0, 0) = +q.w;
+    *m_element(&result, 1, 0) = +q.z;
+    *m_element(&result, 2, 0) = -q.y;
+    *m_element(&result, 3, 0) = -q.x;
+
+    *m_element(&result, 0, 1) = -q.z;
+    *m_element(&result, 1, 1) = +q.w;
+    *m_element(&result, 2, 1) = +q.x;
+    *m_element(&result, 3, 1) = -q.y;
+
+    *m_element(&result, 0, 2) = +q.y;
+    *m_element(&result, 1, 2) = -q.x;
+    *m_element(&result, 2, 2) = +q.w;
+    *m_element(&result, 3, 2) = -q.z;
     return result;
 }
 

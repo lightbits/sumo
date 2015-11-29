@@ -10,7 +10,7 @@ static char *SHADER_GUI_VS =
     "{                                                               \n"
     "    vTexel = texel;                                             \n"
     "    vColor = color;                                             \n"
-    "    gl_Position = projection * vec4(round(position), 0.0, 1.0); \n"
+    "    gl_Position = projection * vec4(position, 0.0, 1.0);        \n"
     "}                                                               \n";
 
 static char *SHADER_GUI_FS =
