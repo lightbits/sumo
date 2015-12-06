@@ -1,3 +1,4 @@
+#define USE_NEW_MATH
 #include "sumo.h"
 #include <stdio.h>
 #define WINDOW_WIDTH 800
@@ -46,16 +47,18 @@ void tick(Input io, float t, float dt)
         attribfv("texcoord", 2, 2, 0);
     }
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mitsuba.indices);
-    glDrawElements(GL_TRIANGLES, mitsuba.num_indices, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, mitsuba.num_indices, GL_UNm_SIGNED_INT, 0);
 
 }
 
 #include "sumo.cpp"
 #else
 MeshAsset mesh;
+Mesh cube;
 GLuint diffusemap;
 RenderPass pass;
 RenderPass sdf_pass;
+RenderPass march3d_pass;
 
 #define SDF_RES 64
 struct SDF
@@ -65,25 +68,25 @@ struct SDF
 } sdf;
 
 // http://iquilezles.org/www/articles/distfunctions/distfunctions.htm
-float dot2( vec3 v ) { return dot(v,v); }
+float dot2( vec3 v ) { return m_dot(v,v); }
 float ud_triangle( vec3 p, vec3 a, vec3 b, vec3 c )
 {
     vec3 ba = b - a; vec3 pa = p - a;
     vec3 cb = c - b; vec3 pb = p - b;
     vec3 ac = a - c; vec3 pc = p - c;
-    vec3 nor = cross( ba, ac );
+    vec3 nor = m_cross( ba, ac );
 
     return sqrt(
-    (sign(dot(cross(ba,nor),pa)) +
-     sign(dot(cross(cb,nor),pb)) +
-     sign(dot(cross(ac,nor),pc))<2.0)
+    (m_sign(m_dot(m_cross(ba,nor),pa)) +
+     m_sign(m_dot(m_cross(cb,nor),pb)) +
+     m_sign(m_dot(m_cross(ac,nor),pc))<2.0)
      ?
-     min( min(
-     dot2(ba*clampf(dot(ba,pa)/dot2(ba),0.0,1.0)-pa),
-     dot2(cb*clampf(dot(cb,pb)/dot2(cb),0.0,1.0)-pb) ),
-     dot2(ac*clampf(dot(ac,pc)/dot2(ac),0.0,1.0)-pc) )
+     m_min( m_min(
+     dot2(ba*m_clamp(m_dot(ba,pa)/dot2(ba),0.0,1.0)-pa),
+     dot2(cb*m_clamp(m_dot(cb,pb)/dot2(cb),0.0,1.0)-pb) ),
+     dot2(ac*m_clamp(m_dot(ac,pc)/dot2(ac),0.0,1.0)-pc) )
      :
-     dot(nor,pa)*dot(nor,pa)/dot2(nor) );
+     m_dot(nor,pa)*m_dot(nor,pa)/dot2(nor) );
 }
 
 void init()
@@ -99,7 +102,10 @@ void init()
                             "demo/obj-load/diffuse.fs");
     sdf_pass = load_render_pass("demo/obj-load/sdfvis.vs",
                                 "demo/obj-load/sdfvis.fs");
+    march3d_pass = load_render_pass("demo/obj-load/march3d.vs",
+                                    "demo/obj-load/march3d.fs");
     diffusemap = so_load_tex2d("assets/models/sdftest/diffuse.png");
+    cube = make_cube();
 
 #if 0
     u32 sdf_index = 0;
@@ -107,7 +113,7 @@ void init()
     for (u32 y = 0; y < SDF_RES; y++)
     for (u32 x = 0; x < SDF_RES; x++)
     {
-        r32 d_min = 8.0f;
+        r32 d_m_min = 8.0f;
         vec3 p = vec3(-1.0f + 2.0f * x / SDF_RES,
                       -1.0f + 2.0f * y / SDF_RES,
                       -1.0f + 2.0f * z / SDF_RES);
@@ -124,9 +130,9 @@ void init()
             vec3 c = *(((vec3*)mesh.buffer.positions) + i2);
 
             r32 d = ud_triangle(p, a, b, c);
-            if (d < d_min) d_min = d;
+            if (d < d_m_min) d_m_min = d;
         }
-        sdf.values[sdf_index++] = d_min;
+        sdf.values[sdf_index++] = d_m_min;
     }
 
     FILE *f = fopen("demo/obj-load/temp.sdf", "wb");
@@ -137,6 +143,25 @@ void init()
     for (u32 i = 0; i < SDF_RES*SDF_RES*SDF_RES; i++)
         sdf.values[i] = sdf_data[i];
 #endif
+
+    // u32 index = 0;
+    // for (u32 z = 0; z < SDF_RES; z++)
+    // for (u32 y = 0; y < SDF_RES; y++)
+    // for (u32 x = 0; x < SDF_RES; x++)
+    // {
+    //     r32 xf = -1.0f + 2.0f * x / SDF_RES;
+    //     r32 yf = -1.0f + 2.0f * y / SDF_RES;
+    //     r32 zf = -1.0f + 2.0f * z / SDF_RES;
+    //     vec3 p = m_vec3(xf, yf, zf);
+    //     r32 df1 = m_length(p) - 0.3f;
+    //     r32 df2 = m_length(p - m_vec3(0.4f, 0.2f, 0.1f)) - 0.25f;
+    //     sdf.values[index] = m_min(df1, df2);
+    //     // if (x == 0 || x == SDF_RES - 1 ||
+    //     //     y == 0 || y == SDF_RES - 1 ||
+    //     //     z == 0 || z == SDF_RES - 1)
+    //     //     sdf.values[index] = 1.0f;
+    //     index++;
+    // }
 
     sdf.texture = so_make_tex3d(sdf.values,
                                 SDF_RES, SDF_RES, SDF_RES,
@@ -210,6 +235,24 @@ void tick(Input io, float t, float dt)
     uniformf("projection", projection);
     uniformf("view", view);
     so_draw_fullscreen_quad();
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    begin(&march3d_pass);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, sdf.texture);
+    uniformi("channel", 0);
+    uniformf("projection", projection);
+    uniformf("view", view);
+    uniformf("scale", 1.0f);
+    mat4 inv_view = m_se3_inverse(view);
+    vec3 camera_origin = (inv_view * m_vec4(0, 0, 0, 1)).xyz;
+    vec3 camera_dir = (inv_view * m_vec4(0, 0, -1, 0)).xyz;
+    uniformf("camera_dir", camera_dir);
+    glBindBuffer(GL_ARRAY_BUFFER, cube.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube.ibo);
+    attribfv("position", 3, 6, 0);
+    glDrawElements(GL_TRIANGLES, cube.index_count, cube.index_type, 0);
 }
 
 #include "sumo.cpp"

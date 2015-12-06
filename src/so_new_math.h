@@ -1,7 +1,10 @@
-/* so_math - v1.0
+/* so_math - v1.01
 
 Changelog
 =========
+6. desember 2015
+    Readded m_sign
+
 26. november 2015
     Moved to new template'd library
     http://www.reedbeta.com/blog/2013/12/28/on-vector-math-libraries/
@@ -521,8 +524,8 @@ vec4 operator *(mat4 m, vec4 b) { return m.a1*b.x + m.a2*b.y + m.a3*b.z + m.a4*b
 template <int n>
 float m_length(Vector<float, n> v)
 {
-    float = sqrt(m_dot(v, v));
-    return float;
+    float result = sqrt(m_dot(v, v));
+    return result;
 }
 
 float m_fast_inv_sqrt(float x)
@@ -543,6 +546,7 @@ Vector<float, n> m_normalize(Vector<float, n> v)
 }
 
 ///////////////// GLSL-like stuff ////////////////
+int m_sign(int x)       { return x < 0 ? -1 : 1; }
 int m_abs(int x)        { return x < 0 ? -x : x; }
 int m_min(int x, int y) { return x < y ? x : y; }
 int m_max(int x, int y) { return x > y ? x : y; }
@@ -551,6 +555,7 @@ int m_clamp(int x, int low, int high)
     return x < low ? low : (x > high ? high : x);
 }
 
+float m_sign(float x)         { return x < 0 ? -1.0f : +1.0f; }
 float m_abs(float x)          { return x < 0 ? -x : x; }
 float m_min(float x, float y) { return x < y ? x : y; }
 float m_max(float x, float y) { return x > y ? x : y; }
