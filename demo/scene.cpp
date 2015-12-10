@@ -120,7 +120,7 @@ bool intersect_ray_sphere(vec3 ro, vec3 rd, vec3 centre, r32 radius, r32 *t)
         r32 t2 = (-b - sqrt(d)) / (2.0f * a);
         if (t1 >= 0.0f && t2 >= 0.0f)
         {
-            *t = min(t1, t2);
+            *t = m_min(t1, t2);
             return true;
         }
         else if (t1 >= 0.0f)
@@ -328,13 +328,13 @@ void tick(Input io, r32 t, r32 dt)
     if (selected_object_index >= 0)
     {
         SceneObject *obj = scene.objects + selected_object_index;
-        if (io.key.down['a'])
+        if (io_key_down(A))
             obj->position.x -= 0.2f * dt;
-        else if (io.key.down['d'])
+        else if (io_key_down(D))
             obj->position.x += 0.2f * dt;
-        if (io.key.down['w'])
+        if (io_key_down(W))
             obj->position.z -= 0.2f * dt;
-        else if (io.key.down['s'])
+        else if (io_key_down(S))
             obj->position.z += 0.2f * dt;
     }
 

@@ -147,7 +147,7 @@ void tick(Input io, float t, float dt)
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("position", 2, 2, 0);
     uniformi("channel", 0);
-    if (io.key.down['a']) uniformi("mode", 1);
+    if (io_key_down(A)) uniformi("mode", 1);
     else uniformi("mode", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);

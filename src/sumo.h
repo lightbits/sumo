@@ -199,6 +199,9 @@ struct Input
 {
     struct Key
     {
+        // These can be checked conveniently using the macro below,
+        // given that you call it in a function which takes Input
+        // in as a variable named io.
         bool down[SDL_NUM_SCANCODES];
         bool released[SDL_NUM_SCANCODES];
     } key;
@@ -219,6 +222,13 @@ struct Input
         } wheel;
     } mouse;
 };
+
+// Example usage:
+// if (io_key_down(A)) ...
+// if (io_key_down(D)) ...
+// if (io_key_down(LCTRL)) ...
+// if (io_key_down(SPACE)) ...
+#define io_key_down(expr) (io.key.down[SDL_SCANCODE_##expr])
 
 // Include Sumo APIs
 // ..............................................................

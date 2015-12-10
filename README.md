@@ -30,3 +30,5 @@ Todo
  * FPS camera
  * Scene
  * Spline camera, follow given set of control points
+
+ * Upgrade imgui. Detect when gui panel is active/hovered, and disable i.e. fps camera from moving.

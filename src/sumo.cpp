@@ -266,15 +266,11 @@ int main(int argc, char **argv)
             switch (event.type)
             {
                 case SDL_KEYDOWN:
-                    if (event.key.keysym.sym < SDL_NUM_SCANCODES)
-                        input.key.down[event.key.keysym.sym] = true;
+                    input.key.down[event.key.keysym.scancode] = true;
                     break;
                 case SDL_KEYUP:
-                    if (event.key.keysym.sym < SDL_NUM_SCANCODES)
-                    {
-                        input.key.down[event.key.keysym.sym] = false;
-                        input.key.released[event.key.keysym.sym] = true;
-                    }
+                    input.key.down[event.key.keysym.scancode] = false;
+                    input.key.released[event.key.keysym.scancode] = true;
                     if (event.key.keysym.sym == SDLK_ESCAPE)
                         running = 0;
                     if (event.key.keysym.sym == SDLK_r)

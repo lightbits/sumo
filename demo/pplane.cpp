@@ -214,7 +214,7 @@ void tick(Input io, r32 t, r32 dt)
     if (io.mouse.left.down)
         spawn(x, y, dt, field_range);
 
-    if (io.key.down['r'])
+    if (io_key_down(R))
     {
         for (u32 i = 0; i < Particle_Count; i++)
         {
