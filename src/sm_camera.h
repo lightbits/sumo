@@ -27,7 +27,7 @@ mat4 camera_fps(Input io, float dt, float move_speed, float sensitivity)
     persist r32 dz = 0.0f;
 
     r32 ktheta = 2.0f * PI / (0.1f * WINDOW_WIDTH);
-    r32 kphi = (PI / 2.0f) / (0.1f * WINDOW_HEIGHT);
+    r32 kphi = 2.0f * PI / (0.1f * WINDOW_WIDTH);
     dtheta = ktheta * io.mouse.rel.x * sensitivity;
     dphi = kphi * io.mouse.rel.y * sensitivity;
     theta += dt * dtheta;
@@ -55,9 +55,9 @@ mat4 camera_fps(Input io, float dt, float move_speed, float sensitivity)
     vec3 v = m_vec3(dx, dy, dz);
     vec3 dp = R*v;
 
-    x += dp.x * dt;
-    y += dp.y * dt;
-    z += dp.z * dt;
+    x += dp.x * move_speed * dt;
+    y += dp.y * move_speed * dt;
+    z += dp.z * move_speed * dt;
 
     mat3 T = m_transpose(R);
     vec3 p = m_vec3(x, y, z);
