@@ -71,12 +71,12 @@ void init()
     renders.diffuse = load_render_pass("assets/shaders/diffuse.vs", "assets/shaders/diffuse.fs");
     renders.stencil = make_render_pass(stencil_vs, stencil_fs);
 
-    portal_a.position = m_vec3(0.1f, -0.05f, -0.1f);
+    portal_a.position = m_vec3(0.1f, 0.0f, -0.1f);
     portal_a.rotation = m_mat3(mat_rotate_y(0.0f));
     portal_a.scale = m_vec3(0.08f, 0.08f, 0.002f);
     portal_a.link = &portal_b;
 
-    portal_b.position = m_vec3(-0.1f, -0.05f, 0.1f);
+    portal_b.position = m_vec3(-0.1f, 0.0f, 0.1f);
     portal_b.rotation = m_mat3(mat_rotate_y(0.5f));
     portal_b.scale = m_vec3(0.08f, 0.08f, 0.002f);
     portal_b.link = &portal_a;
@@ -85,10 +85,17 @@ void init()
     portals[1] = portal_b;
 }
 
+vec4 plane_equation_from_portal(Portal p)
+{
+    vec4 result;
+    result.xyz = -p.rotation.a3;
+    result.w = m_dot(p.rotation.a3, p.position);
+    return result;
+}
+
 void draw_world_no_portals(mat4 projection,
                            mat4 view)
 {
-    begin(&renders.diffuse);
     uniformf("projection", projection);
     uniformf("model", mat_scale(1.0f) * mat_translate(0.0f, -0.2f, 0.0f));
     uniformf("view", view);
@@ -203,13 +210,18 @@ void draw_world(Input io, mat4 projection, mat4 view)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     depth_write(true);
 
+    begin(&renders.diffuse);
+    glEnable(GL_CLIP_DISTANCE0);
+    glEnable(GL_CLIP_DISTANCE1);
     glStencilMask(0x00);
     for (u32 portal_index = 0;
          portal_index < array_count(portals);
          portal_index++)
     {
+        uniformf("clip0", plane_equation_from_portal(*portals[portal_index].link));
         glStencilFunc(GL_EQUAL, portal_index + 1, 0xFF);
         draw_world_no_portals(projection, portal_views[portal_index]);
+        uniformf("clip0", m_vec4(0));
     }
 
     glStencilFunc(GL_EQUAL, 0, 0xFF);
