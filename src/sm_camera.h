@@ -51,7 +51,7 @@ mat4 camera_fps(Input io, float dt, float move_speed, float sensitivity)
     dy = exp(-5.0f * dt) * dy;
     dz = exp(-5.0f * dt) * dz;
 
-    mat3 R = m_mat3(mat_rotate_y(theta) * mat_rotate_x(-phi));
+    mat3 R = m_mat3(mat_rotate_y(-theta) * mat_rotate_x(-phi));
     vec3 v = m_vec3(dx, dy, dz);
     vec3 dp = R*v;
 

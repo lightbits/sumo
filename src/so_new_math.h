@@ -2,7 +2,12 @@
 
 Changelog
 =========
-6. desember 2015
+11. december 2015
+    Fixed sign convention on rotation matrices.
+    Now all follow the right-hand rule (positive angle means
+    counter-clockwise rotation about the respective axis.).
+
+6. december 2015
     Readded m_sign
 
 26. november 2015
@@ -791,6 +796,8 @@ mat_scale(vec3 s)
     return mat_scale(s.x, s.y, s.z);
 }
 
+// Positive angle indicates counter-clockwise rotation about x axis
+// according to the right hand rule.
 mat4
 mat_rotate_x(float angle_in_radians)
 {
@@ -804,6 +811,7 @@ mat_rotate_x(float angle_in_radians)
     return result;
 }
 
+// Positive angle indicates counter-clockwise rotation about y axis
 mat4
 mat_rotate_y(float angle_in_radians)
 {
@@ -811,12 +819,13 @@ mat_rotate_y(float angle_in_radians)
     float s = sin(angle_in_radians);
     mat4 result = m_id4();
     result.a1.x = c;
-    result.a1.z = s;
-    result.a3.x = -s;
+    result.a1.z = -s;
+    result.a3.x = s;
     result.a3.z = c;
     return result;
 }
 
+// Positive angle indicates counter-clockwise rotation about z axis
 mat4
 mat_rotate_z(float angle_in_radians)
 {
@@ -824,8 +833,8 @@ mat_rotate_z(float angle_in_radians)
     float s = sin(angle_in_radians);
     mat4 result = m_id4();
     result.a1.x = c;
-    result.a2.x = -s;
     result.a1.y = s;
+    result.a2.x = -s;
     result.a2.y = c;
     return result;
 }

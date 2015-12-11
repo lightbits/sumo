@@ -77,13 +77,13 @@ void init()
     renders.diffuse = load_render_pass("assets/shaders/diffuse.vs", "assets/shaders/diffuse.fs");
     renders.stencil = make_render_pass(stencil_vs, stencil_fs);
 
-    portal_a.position = m_vec3(0.1f, 0.0f, -0.1f);
-    portal_a.rotation = m_mat3(mat_rotate_y(0.0f));
+    portal_a.position = m_vec3(0.2f, 0.0f, 0.2f);
+    portal_a.rotation = m_mat3(mat_rotate_y(1.7f) * mat_rotate_x(0.5f));
     portal_a.scale = m_vec3(0.08f, 0.08f, 0.005f);
     portal_a.link = &portal_b;
 
-    portal_b.position = m_vec3(-0.1f, 0.0f, 0.1f);
-    portal_b.rotation = m_mat3(mat_rotate_y(0.5f));
+    portal_b.position = m_vec3(-0.2f, 0.0f, 0.0f);
+    portal_b.rotation = m_mat3(mat_rotate_y(-0.2f));
     portal_b.scale = m_vec3(0.08f, 0.08f, 0.005f);
     portal_b.link = &portal_a;
 
@@ -94,8 +94,8 @@ void init()
 vec4 plane_equation_from_portal(Portal p)
 {
     vec4 result;
-    result.xyz = -p.rotation.a3;
-    result.w = m_dot(p.rotation.a3, p.position);
+    result.xyz = p.rotation.a3;
+    result.w = -m_dot(p.rotation.a3, p.position);
     return result;
 }
 
@@ -142,19 +142,18 @@ void draw_level(mat4 projection, mat4 view, vec4 clip)
     attribfv("position", 3, 6, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, portal_mesh.ibo);
 
-    // int i = 0;
-    // uniformf("model", portals[i].model * mat_translate(0.0f, 0.0f, +6.0f) * mat_scale(1.2f, 1.2f, 5.0f));
-    // uniformf("albedo", m_vec4(0.32f, 0.13f, 0.1f, 1.0f));
-    // uniformi("use_vertex_color", 0);
-    // uniformi("use_diffuse", 0);
-    // glDrawElements(GL_TRIANGLES, portal_mesh.index_count, portal_mesh.index_type, 0);
-
-    // i = 1;
-    // uniformf("model", portals[i].model * mat_translate(0.0f, 0.0f, -6.0f) * mat_scale(1.2f, 1.2f, 5.0f));
-    // uniformf("albedo", m_vec4(0.22f, 0.36f, 0.42f, 1.0f));
-    // uniformi("use_vertex_color", 0);
-    // uniformi("use_diffuse", 0);
-    // glDrawElements(GL_TRIANGLES, portal_mesh.index_count, portal_mesh.index_type, 0);
+    vec4 colors[array_count(portals)] = {
+        m_vec4(0.65f, 0.22f, 0.1f, 1.0f),
+        m_vec4(0.1f, 0.22f, 0.65f, 1.0f)
+    };
+    for (u32 i = 0; i < array_count(portals); i++)
+    {
+        uniformf("model", portals[i].model * mat_translate(0.0f, 0.0f, -6.0f) * mat_scale(1.2f, 1.2f, 5.0f));
+        uniformf("albedo", colors[i]);
+        uniformi("use_vertex_color", 0);
+        uniformi("use_diffuse", 0);
+        glDrawElements(GL_TRIANGLES, portal_mesh.index_count, portal_mesh.index_type, 0);
+    }
 }
 
 // Decomposes the (world->view) transformation into
@@ -365,13 +364,14 @@ void tick(Input io, float t, float dt)
     decompose_view(view, &camera_rotation, &camera_position);
     for (u32 i = 0; i < array_count(portals); i++)
     {
+        mat3 B = portals[i].link->rotation * m_mat3(mat_rotate_y(PI));
         Portal a = portals[i];
         Portal b = *a.link;
-        mat3 T = b.rotation * m_transpose(a.rotation);
+        mat3 T = B * m_transpose(a.rotation);
         mat3 R = T * camera_rotation;
         vec3 p = T * (camera_position - a.position) + b.position;
         portals[i].view = view_from_se3(R, p);
-        portals[i].model = m_se3(a.rotation, a.position) * mat_scale(a.scale);
+        portals[i].model = m_se3(a.rotation * m_mat3(mat_scale(a.scale)), a.position);
     }
 
     // Debugging
