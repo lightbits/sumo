@@ -786,6 +786,12 @@ mat_scale(float x, float y, float z)
 }
 
 mat4
+mat_scale(vec3 s)
+{
+    return mat_scale(s.x, s.y, s.z);
+}
+
+mat4
 mat_rotate_x(float angle_in_radians)
 {
     float c = cos(angle_in_radians);

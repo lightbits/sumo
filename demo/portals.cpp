@@ -39,7 +39,10 @@ struct Portal
     vec3 position; // Position of portal origin relative world origin
     mat3 rotation; // Rotation from portal frame to world frame
                    // (portal frame expressed in world frame)
+    vec3 scale;
     Portal *link;
+
+    mat4 model; // Computed object->world transformation matrix
 };
 
 Portal portal_a;
@@ -68,12 +71,14 @@ void init()
     renders.diffuse = load_render_pass("assets/shaders/diffuse.vs", "assets/shaders/diffuse.fs");
     renders.stencil = make_render_pass(stencil_vs, stencil_fs);
 
-    portal_a.position = m_vec3(0.0f, -0.05f, 0.05f);
+    portal_a.position = m_vec3(0.1f, -0.05f, -0.1f);
     portal_a.rotation = m_mat3(mat_rotate_y(0.0f));
+    portal_a.scale = m_vec3(0.08f, 0.08f, 0.002f);
     portal_a.link = &portal_b;
 
-    portal_b.position = m_vec3(-0.05f, -0.05f, -0.2f);
+    portal_b.position = m_vec3(-0.1f, -0.05f, 0.1f);
     portal_b.rotation = m_mat3(mat_rotate_y(0.5f));
+    portal_b.scale = m_vec3(0.08f, 0.08f, 0.002f);
     portal_b.link = &portal_a;
 
     portals[0] = portal_a;
@@ -110,21 +115,23 @@ void draw_portal_overlay(mat4 projection, mat4 view)
     attribfv("position", 3, 6, 0);
     uniformf("projection", projection);
     uniformf("view", view);
-    uniformf("albedo", m_vec4(0.5f, 0.8f, 1.0f, 0.2f));
     uniformi("use_vertex_color", 0);
     uniformi("use_diffuse", 0);
+    vec4 colors[array_count(portals)] = {
+        m_vec4(1.0f, 0.2f, 0.1f, 0.1f),
+        m_vec4(0.1f, 0.2f, 1.0f, 0.1f)
+    };
     for (u32 portal_index = 0;
          portal_index < array_count(portals);
          portal_index++)
     {
-        mat4 model = m_se3(portals[portal_index].rotation,
-                           portals[portal_index].position);
-        uniformf("model", model * mat_scale(0.005f, 0.06f, 0.04f));
+        uniformf("albedo", colors[portal_index]);
+        uniformf("model", portals[portal_index].model);
         glDrawElements(GL_TRIANGLES, stencil_mesh.index_count, stencil_mesh.index_type, 0);
     }
 }
 
-void draw_world(mat4 projection, mat4 view)
+void draw_world(Input io, mat4 projection, mat4 view)
 {
     mat3 camera_rotation; // Camera frame relative world frame
     vec3 camera_position; // Camera position relative world origin
@@ -135,6 +142,32 @@ void draw_world(mat4 projection, mat4 view)
         camera_rotation = m_transpose(R);
         camera_position = -camera_rotation * p;
     }
+
+    // Compute portal-relative viewports
+    mat4 portal_views[array_count(portals)];
+    for (u32 portal_index = 0;
+         portal_index < array_count(portals);
+         portal_index++)
+    {
+        Portal a = portals[portal_index];
+        Portal b = *a.link;
+        mat3 R = b.rotation * m_transpose(a.rotation) * camera_rotation;
+        vec3 p = b.rotation * m_transpose(a.rotation) * (camera_position - a.position) + b.position;
+        mat4 portal_view = view_from_se3(R, p);
+        portal_views[portal_index] = portal_view;
+
+        // And the model transformation matrix while we're at it
+        mat4 model = m_se3(portals[portal_index].rotation,
+                           portals[portal_index].position);
+        portals[portal_index].model =
+                    model * mat_scale(portals[portal_index].scale);
+    }
+
+    // Debugging
+    if (io_key_down(1))
+        view = portal_views[0];
+    else if (io_key_down(2))
+        view = portal_views[1];
 
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_CULL_FACE);
@@ -163,10 +196,8 @@ void draw_world(mat4 projection, mat4 view)
          portal_index < array_count(portals);
          portal_index++)
     {
-        mat4 model = m_se3(portals[portal_index].rotation,
-                           portals[portal_index].position);
         glStencilFunc(GL_ALWAYS, portal_index + 1, 0xFF);
-        uniformf("model", model * mat_scale(0.005f, 0.06f, 0.04f));
+        uniformf("model", portals[portal_index].model);
         glDrawElements(GL_TRIANGLES, stencil_mesh.index_count, stencil_mesh.index_type, 0);
     }
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -177,15 +208,8 @@ void draw_world(mat4 projection, mat4 view)
          portal_index < array_count(portals);
          portal_index++)
     {
-        Portal a = portals[portal_index];
-        Portal b = *a.link;
-        mat3 Rac = m_transpose(a.rotation) * camera_rotation;
-        mat3 Rwc = b.rotation * Rac;
-        vec3 pac = camera_position - a.position;
-        vec3 pwc = b.rotation * pac;
-        mat4 portal_view = view_from_se3(Rwc, pwc);
         glStencilFunc(GL_EQUAL, portal_index + 1, 0xFF);
-        draw_world_no_portals(projection, portal_view);
+        draw_world_no_portals(projection, portal_views[portal_index]);
     }
 
     glStencilFunc(GL_EQUAL, 0, 0xFF);
@@ -224,7 +248,7 @@ void tick(Input io, float t, float dt)
     mat4 projection = mat_perspective(PI / 3.5f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.02f, 10.0f);
     mat4 view = camera_fps(io, dt, 0.2f);
 
-    draw_world(projection, view);
+    draw_world(io, projection, view);
 }
 
 #include "sumo.cpp"
