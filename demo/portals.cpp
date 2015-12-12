@@ -2,8 +2,6 @@
 #include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
-#define MULTISAMPLES 4
-#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define WINDOW_HIDE_CURSOR 1
 #define GLSL(src) "#version 150\n" #src
 
@@ -54,10 +52,19 @@ Portal portal_a;
 Portal portal_b;
 Portal portals[2];
 
+// Some notation:
+// The camera frame consists of three axes: x, y and z.
+// The camera's forward vector, however, negative z, due
+// to convention of the projection matrix. That is why
+// I multiply by -1 in the below functions (it's actually
+// a 180 degree rotation about the y axis).
+
 // R: Rotation from view frame to world frame
 // p: Camera position from world origin relative world frame
 mat4 view_from_se3(mat3 R, vec3 p)
 {
+    R.a1 *= -1.0f;
+    R.a3 *= -1.0f;
     mat3 T = m_transpose(R);
     return m_se3(T, -T*p);
 }
@@ -66,6 +73,23 @@ void se3_decompose(mat4 se3, mat3 *R, vec3 *p)
 {
     *R = m_mat3(se3);
     *p = se3.a4.xyz;
+}
+
+// Decomposes the (world->view) transformation into
+// a rotation matrix and position vector describing
+// the camera rotation and position relative to the
+// world frame.
+void decompose_view(mat4 view, mat3 *R, vec3 *p)
+{
+    mat3 R_c, R_w;
+    vec3 p_c, p_w;
+    se3_decompose(view, &R_c, &p_c);
+    R_w = m_transpose(R_c);
+    p_w = -R_w * p_c;
+    R_w.a1 *= -1.0f;
+    R_w.a3 *= -1.0f;
+    *R = R_w; // Camera frame relative world frame
+    *p = p_w; // Camera position relative world origin
 }
 
 void init()
@@ -89,6 +113,8 @@ void init()
 
     portals[0] = portal_a;
     portals[1] = portal_b;
+
+    lines_init();
 }
 
 vec4 plane_equation_from_portal(Portal p)
@@ -155,21 +181,6 @@ void draw_level(mat4 projection, mat4 view, vec4 clip)
     }
 }
 
-// Decomposes the (world->view) transformation into
-// a rotation matrix and position vector describing
-// the camera rotation and position relative to the
-// world frame.
-void decompose_view(mat4 view, mat3 *R, vec3 *p)
-{
-    mat3 R_c, R_w;
-    vec3 p_c, p_w;
-    se3_decompose(view, &R_c, &p_c);
-    R_w = m_transpose(R_c);
-    p_w = -R_w * p_c;
-    *R = R_w; // Camera frame relative world frame
-    *p = p_w; // Camera position relative world origin
-}
-
 void draw_world(Input io, mat4 projection, mat4 view)
 {
     glEnable(GL_STENCIL_TEST);
@@ -205,14 +216,13 @@ void draw_world(Input io, mat4 projection, mat4 view)
         draw_level(projection, portals[i].view, clip);
     }
     glDisable(GL_CLIP_DISTANCE0);
+    glDisable(GL_STENCIL_TEST);
 }
 
 void tick(Input io, float t, float dt)
 {
     mat4 projection = mat_perspective(PI / 3.5f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.02f, 10.0f);
     mat4 view = camera_fps(io, dt, 0.2f);
-
-    // mat4 view = mat_translate(-0.06f, 0.0f, -0.4f) * mat_rotate_x(0.3f) * mat_rotate_y(0.23f);
 
     mat3 camera_rotation;
     vec3 camera_position;
