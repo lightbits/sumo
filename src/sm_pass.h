@@ -38,6 +38,10 @@ void uniformf(char *name, float x, float y, float z, float w);
 void uniformf(char *name, vec2 x);
 void uniformf(char *name, vec3 x);
 void uniformf(char *name, vec4 x);
+#ifdef USE_NEW_MATH
+void uniformf(char *name, mat2 x);
+void uniformf(char *name, mat3 x);
+#endif
 void uniformf(char *name, mat4 x);
 
 #endif // SM_PASS_HEADER_INCLUDE
@@ -160,6 +164,20 @@ void uniformf(char *name, vec4 x)
     GLint location = get_uniform_location(_active_render_pass, name);
     glUniform4f(location, x.x, x.y, x.z, x.w);
 }
+
+#ifdef USE_NEW_MATH
+void uniformf(char *name, mat2 x)
+{
+    GLint location = get_uniform_location(_active_render_pass, name);
+    glUniformMatrix2fv(location, 1, GL_FALSE, x.data);
+}
+
+void uniformf(char *name, mat3 x)
+{
+    GLint location = get_uniform_location(_active_render_pass, name);
+    glUniformMatrix3fv(location, 1, GL_FALSE, x.data);
+}
+#endif
 
 void uniformf(char *name, mat4 x)
 {
