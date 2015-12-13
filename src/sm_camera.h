@@ -43,9 +43,6 @@ mat4 camera_fps(quat *q, vec3 *p,
     if (io_key_down(SPACE))      vy = +1.0f;
     else if (io_key_down(LCTRL)) vy = -1.0f;
 
-    mat3 R = m_quat_to_so3(*q);
-    vec3 dp = R*m_vec3(vx, vy, vz);
-
     // Integrate each axis by itself, to avoid numerical
     // issues by integrating the combined axis (which drifts
     // if the angular velocity is large). By instead integrating
@@ -56,6 +53,8 @@ mat4 camera_fps(quat *q, vec3 *p,
     *q += dq * dt;
     *q = m_normalize(*q);
 
+    mat3 R = m_quat_to_so3(*q);
+    vec3 dp = R*m_vec3(vx, vy, vz);
     *p += dp * dt * movespeed;
 
     R.a1 *= -1.0f;
