@@ -51,8 +51,8 @@ mat4 stateless_camera_fps(quat *q, vec3 *p,
     mat3 R = m_quat_to_so3(*q);
     float wx = 0.0f;
     float wy = 0.0f;
-    if (io_key_down(UP))         wx = +1.0f;
-    else if (io_key_down(DOWN))  wx = -1.0f;
+    if (io_key_down(UP))         wx = -1.0f;
+    else if (io_key_down(DOWN))  wx = +1.0f;
     if (io_key_down(LEFT))       wy = +1.0f;
     else if (io_key_down(RIGHT)) wy = -1.0f;
 
@@ -78,24 +78,19 @@ mat4 stateless_camera_fps(quat *q, vec3 *p,
 }
 
 #if 0
-mat4 camera_fps_collision(quat *t, vec3 *p,
-                          Input io, float dt,
+mat4 camera_fps_collision(quat *q, vec3 *p, vec3 *v,
                           vec4 *plane_equations,
                           vec2 *plane_dimensions,
                           int num_planes,
+                          Input io, float dt,
                           float movespeed = 1.0f,
-                          float sensitivity = 1.0f)
+                          float sensitivity = 3.0f)
 {
-    mat3 R = m_quat_to_so3(*q);
-    float wx = 0.0f;
-    float wy = 0.0f;
-
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     float kw = 2.0f * PI / (0.1f * WINDOW_WIDTH);
-
     float wy = -kw * io.mouse.rel.x * sensitivity;
-    float wy = kw * io.mouse.rel.x * sensitivity;
+    float wx = kw * io.mouse.rel.y * sensitivity;
 
     float vx = 0.0f;
     float vy = 0.0f;
@@ -107,12 +102,33 @@ mat4 camera_fps_collision(quat *t, vec3 *p,
     if (io_key_down(SPACE))      vy = +1.0f;
     else if (io_key_down(LCTRL)) vy = -1.0f;
 
+    mat3 R = m_quat_to_so3(*q);
     vec3 dp = R*m_vec3(vx, vy, vz);
-    vec3 w = m_vec3(0, wy, 0) + R.a1*wx;
-    quat dq = 0.5f * m_quat_mul(m_vec4(w, 0.0f), *q);
 
+    // Integrate each axis by itself, to avoid numerical
+    // issues by integrating the combined axis (which drifts
+    // if the angular velocity is large). By instead integrating
+    // x and y strictly seperately, we avoid off-axis rotation.
+    quat dq = 0.5f * m_quat_mul(m_vec4(0, wy, 0, 0), *q);
+    *q += dq * dt;
+    // *q = m_normalize(*q); // ?
+    dq = 0.5f * m_quat_mul(*q, m_vec4(wx, 0, 0, 0));
     *q += dq * dt;
     *q = m_normalize(*q);
+
+    #if 0
+    // Compare with this. Small enough timestep => ok, but
+    // computationally very expensive!
+    for (u32 i = 0; i < 128; i++)
+    {
+        R = m_quat_to_so3(*q);
+        vec3 w = m_vec3(0.0f, wy, 0.0f) + R.a1*wx;
+        quat dq = 0.5f * m_quat_mul(m_vec4(w, 0), *q);
+        *q += dq * dt / 128.0f;
+        *q = m_normalize(*q);
+    }
+    #endif
+
     *p += dp * dt;
 
     return view_from_se3(R, *p);
@@ -129,7 +145,6 @@ vec2 project(mat4 projection, mat4 view, vec3 w)
         return clip.xy  / 0.01f;
 }
 
-#include <stdio.h>
 void lines_draw_3d(mat4 projection, mat4 view, vec3 a, vec3 b)
 {
     vec2 ap = project(projection, view, a);
