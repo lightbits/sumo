@@ -638,6 +638,12 @@ mat4 m_se3(mat3 R, vec3 r)
     return result;
 }
 
+void m_se3_decompose(mat4 se3, mat3 *R, vec3 *p)
+{
+    *R = m_mat3(se3);
+    *p = se3.a4.xyz;
+}
+
 // return: The inverse of a SO3 matrix
 mat4 m_se3_inverse(mat4 m)
 {

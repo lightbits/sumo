@@ -52,44 +52,19 @@ Portal portal_a;
 Portal portal_b;
 Portal portals[2];
 
-// Some notation:
-// The camera frame consists of three axes: x, y and z.
-// The camera's forward vector, however, negative z, due
-// to convention of the projection matrix. That is why
-// I multiply by -1 in the below functions (it's actually
-// a 180 degree rotation about the y axis).
-
-// R: Rotation from view frame to world frame
-// p: Camera position from world origin relative world frame
-mat4 view_from_se3(mat3 R, vec3 p)
+// R: Camera frame in world-space
+// +z: Viewing direction
+// +y: Upwards
+// +x: Left of viewing direction
+// p: Camera position from world origin in world-space
+mat4 view_from_camera(mat3 R, vec3 p)
 {
+    // The view frame is a 180 degree rotation of the camera frame
+    // about the y axis.
     R.a1 *= -1.0f;
     R.a3 *= -1.0f;
     mat3 T = m_transpose(R);
     return m_se3(T, -T*p);
-}
-
-void se3_decompose(mat4 se3, mat3 *R, vec3 *p)
-{
-    *R = m_mat3(se3);
-    *p = se3.a4.xyz;
-}
-
-// Decomposes the (world->view) transformation into
-// a rotation matrix and position vector describing
-// the camera rotation and position relative to the
-// world frame.
-void decompose_view(mat4 view, mat3 *R, vec3 *p)
-{
-    mat3 R_c, R_w;
-    vec3 p_c, p_w;
-    se3_decompose(view, &R_c, &p_c);
-    R_w = m_transpose(R_c);
-    p_w = -R_w * p_c;
-    R_w.a1 *= -1.0f;
-    R_w.a3 *= -1.0f;
-    *R = R_w; // Camera frame relative world frame
-    *p = p_w; // Camera position relative world origin
 }
 
 void init()
@@ -221,12 +196,13 @@ void draw_world(Input io, mat4 projection, mat4 view)
 
 void tick(Input io, float t, float dt)
 {
-    mat4 projection = mat_perspective(PI / 3.5f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.02f, 10.0f);
-    mat4 view = camera_fps(io, dt, 0.2f);
+    persist quat camera_q = m_quat_from_angle_axis(m_vec3(0, 1, 0), 0.0f);
+    persist vec3 camera_position = m_vec3(0, 0, 0);
 
-    mat3 camera_rotation;
-    vec3 camera_position;
-    decompose_view(view, &camera_rotation, &camera_position);
+    mat4 projection = mat_perspective(PI / 3.5f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.02f, 10.0f);
+    mat4 view = camera_fps(&camera_q, &camera_position, io, dt, 0.2f);
+    mat3 camera_rotation = m_quat_to_so3(camera_q);
+
     for (u32 i = 0; i < array_count(portals); i++)
     {
         mat3 B = portals[i].link->rotation * m_mat3(mat_rotate_y(PI));
@@ -235,7 +211,7 @@ void tick(Input io, float t, float dt)
         mat3 T = B * m_transpose(a.rotation);
         mat3 R = T * camera_rotation;
         vec3 p = T * (camera_position - a.position) + b.position;
-        portals[i].view = view_from_se3(R, p);
+        portals[i].view = view_from_camera(R, p);
         portals[i].model = m_se3(a.rotation * m_mat3(mat_scale(a.scale)), a.position);
     }
 
