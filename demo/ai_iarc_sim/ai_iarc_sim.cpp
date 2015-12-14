@@ -7,18 +7,6 @@
 #define MULTISAMPLES 4
 #define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 
-void lines_draw_circle(vec2 p, float r)
-{
-    vec2 points[32] = {};
-    for (u32 i = 0; i < 32; i++)
-    {
-        float a = TWO_PI * i / 31.0f;
-        vec2 d = vec2(cos(a), sin(a)) * r;
-        points[i] = p + d;
-    }
-    lines_draw_poly(points, 32);
-}
-
 struct GroundRobotModel
 {
     float x;
