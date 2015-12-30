@@ -7,6 +7,8 @@ Demo
  ![](./devlog/lines.png)
  * particles.cpp - SIMD and shadow mapping
  ![](./devlog/particles.png)
+ * idxpal.cpp - 4xSupersampled pixel art tool
+ ![](./devlog/idxpal.png)
 
 Todo
 ====
