@@ -1,6 +1,7 @@
 #include "sumo.h"
-#define WINDOW_WIDTH 512
-#define WINDOW_HEIGHT 512
+#include <stdio.h>
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
 #define GLSL(src) "#version 150\n" #src
 
 char *vs = GLSL(
@@ -156,7 +157,6 @@ void init()
     pass = make_render_pass(vs, fs);
     glGenTextures(1, &tex0);
     glGenTextures(1, &tex1);
-    blend_mode(true);
 }
 
 void clamp(int *x, int min, int max)
@@ -188,6 +188,29 @@ void tick(Input io, float t, float dt)
     float mouse_yf = (0.5f + 0.5f * io.mouse.ndc.y);
     s32 mouse_x_src = mouse_xf * SRC_X;
     s32 mouse_y_src = mouse_yf * SRC_Y;
+
+    if (io.mouse.left.down)
+    {
+        PAINT(mouse_x_src, mouse_y_src, brush);
+        if (brush.mirror_x_on && brush.mirror_y_on)
+        {
+            s32 dx = brush.mirror_x - mouse_x_src;
+            s32 dy = brush.mirror_y - mouse_y_src;
+            PAINT(brush.mirror_x + dx, mouse_y_src, brush);
+            PAINT(brush.mirror_x + dx, brush.mirror_y + dy, brush);
+            PAINT(mouse_x_src, brush.mirror_y + dy, brush);
+        }
+        else if (brush.mirror_x_on)
+        {
+            s32 dx = brush.mirror_x - mouse_x_src;
+            PAINT(brush.mirror_x + dx, mouse_y_src, brush);
+        }
+        else if (brush.mirror_y_on)
+        {
+            s32 dy = brush.mirror_y - mouse_y_src;
+            PAINT(mouse_x_src, brush.mirror_y + dy, brush);
+        }
+    }
 
     if (io_key_down(1)) brush.value = 0;
     if (io_key_down(2)) brush.value = 1;
@@ -231,29 +254,6 @@ void tick(Input io, float t, float dt)
         {
             brush.mirror_y_on = 1;
             brush.mirror_y = mouse_y_src;
-        }
-    }
-
-    if (io.mouse.left.down)
-    {
-        PAINT(mouse_x_src, mouse_y_src, brush);
-        if (brush.mirror_x_on && brush.mirror_y_on)
-        {
-            s32 dx = brush.mirror_x - mouse_x_src;
-            s32 dy = brush.mirror_y - mouse_y_src;
-            PAINT(brush.mirror_x + dx, mouse_y_src, brush);
-            PAINT(brush.mirror_x + dx, brush.mirror_y + dy, brush);
-            PAINT(mouse_x_src, brush.mirror_y + dy, brush);
-        }
-        else if (brush.mirror_x_on)
-        {
-            s32 dx = brush.mirror_x - mouse_x_src;
-            PAINT(brush.mirror_x + dx, mouse_y_src, brush);
-        }
-        else if (brush.mirror_y_on)
-        {
-            s32 dy = brush.mirror_y - mouse_y_src;
-            PAINT(mouse_x_src, brush.mirror_y + dy, brush);
         }
     }
 
@@ -369,6 +369,7 @@ void tick(Input io, float t, float dt)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
+        blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_FUNC_ADD);
         clearc(0, 0, 0, 1);
         begin(&pass);
         glBindTexture(GL_TEXTURE_2D, tex1);
@@ -413,6 +414,7 @@ void tick(Input io, float t, float dt)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 
+        blend_mode(true, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_FUNC_ADD);
         clearc(0, 0, 0, 1);
         begin(&pass);
         glBindTexture(GL_TEXTURE_2D, tex0);
