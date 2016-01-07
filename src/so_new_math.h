@@ -1,7 +1,10 @@
-/* so_math - v1.01
+/* so_new_math - v1.01
 
 Changelog
 =========
+4. january 2016
+    smoothstep for new math
+
 11. december 2015
     Fixed sign convention on rotation matrices.
     Now all follow the right-hand rule (positive angle means
@@ -581,6 +584,12 @@ float m_map(float t0, float t1, float t, float y0, float y1)
 float m_mix(float low, float high, float t)
 {
     return low + (high - low) * t;
+}
+
+float m_smoothstep(float lo, float hi, float x)
+{
+    float t = m_clamp((x - lo) / (hi - lo), 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
 }
 
 template <typename T, int n>
