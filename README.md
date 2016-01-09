@@ -17,6 +17,8 @@ Demo
 
  ![](./devlog/mystjam.png)
 
+ ![](./devlog/sdf.png)
+
 Todo
 ====
  * stb_truetype
