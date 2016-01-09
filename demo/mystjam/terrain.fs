@@ -1,6 +1,7 @@
 #version 150
 
 in vec2 v_position;
+uniform float aspect;
 out vec4 f_color;
 
 //
@@ -78,14 +79,19 @@ float Terrain(vec3 p)
 {
     float h = 0.0;
 
-    h += 0.5*snoise(0.22*p.xz);
+    float h0 = 0.5 + 3.5*smoothstep(8.0, 16.0, length(p));
+    float f0 = 0.22 - 0.15*smoothstep(8.0, 24.0, length(p));
+    h += h0*snoise(f0*p.xz);
     p.z += 0.1*snoise(0.88*p.xz);
     p.x += 0.1*snoise(0.93*p.xz);
     h += 0.05*snoise(0.88*p.xz);
-    vec3 dp = p - vec3(-3.0, 0.0, 8.0);
-    h += 3.0*exp2(-0.7*dot(dp, dp));
 
-    // h -= 0.2*smoothstep(0.0, 1.0, sin(3.0*p.x)*cos(4.33*p.z));
+    h += 0.001*snoise(20.0*p.xz);
+    p.z += 0.1*snoise(1.18*p.xz);
+    p.x += 0.1*snoise(1.13*p.xz);
+    h += 0.002*snoise(8.13*p.xz);
+    h += 0.01*snoise(2.13*p.xz);
+    h += 0.005*snoise(4.13*p.xz);
 
     return p.y - h;
 }
@@ -101,8 +107,8 @@ vec3 TerrainNormal(vec3 p)
 
 bool March(vec3 ro, vec3 rd, out vec3 out_p)
 {
-    #define STEPS 256
-    #define T_MAX 16.0
+    #define STEPS 512
+    #define T_MAX 128.0
     #define STEP_SIZE 0.03
     float multiplier = 1.0;
     float t = 0.0;
@@ -151,13 +157,24 @@ float Lighting(vec3 p, vec3 N, vec3 L)
     }
 }
 
+vec3 SkyColor(vec3 rd)
+{
+    vec3 sky = vec3(0.27, 0.5, 0.9);
+    vec3 horizon = mix(sky, vec3(1.1, 1.05, 0.9), 0.7);
+    return mix(horizon, sky, 1.2*smoothstep(0.0, 2.0, 3.5*rd.y));
+    // float h = 0.4 - 0.18*smoothstep(0.0, 1.0, 0.9*abs(rd.x-0.5));
+    // vec3 color = mix(horizon, sky, smoothstep(0.0, h, rd.y));
+    // color = mix(color, sky, smoothstep(0.0, 1.0, 0.9*abs(rd.x-0.5)));
+    // return color;
+}
+
 void main()
 {
-    vec3 ro = vec3(0.0, 2.0, 0.0);
-    vec3 forward = normalize(vec3(0.0, -0.7, 1.0));
-    vec3 right = vec3(1.0, 0.0, 0.0);
-    vec3 up = vec3(0.0, 1.0, 0.0);
-    vec3 rd = normalize(forward*0.9 + v_position.x * right + v_position.y * up);
+    vec3 ro = vec3(0.6, 2.5, 0.0);
+    vec3 right = vec3(1.0, 0.0, 0.0) * aspect;
+    vec3 up = normalize(vec3(0.0, 1.0, 0.0));
+    vec3 forward = normalize(cross(right, up));
+    vec3 rd = normalize(forward*1.2 + v_position.x * right + v_position.y * up);
 
     vec3 p;
     vec3 color = vec3(0.0);
@@ -178,12 +195,12 @@ void main()
         color += Lighting(p, N, L1) * albedo;
         color += 0.1*Lighting(p, N, L2) * albedo;
 
-        float fog = 1.0 - exp(-0.01*dot(p, p));
-        color = mix(color, 0.5*vec3(1.0, 0.98, 0.94), fog);
+        float fog = 1.0 - exp(-0.005*dot(p, p));
+        color = mix(color, 0.8*SkyColor(rd), fog);
     }
     else
     {
-        color = vec3(1.0, 0.98, 0.94);
+        color = SkyColor(rd);
     }
 
     color = pow(color, vec3(0.4545));
