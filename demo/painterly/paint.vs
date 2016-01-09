@@ -3,11 +3,13 @@
 in vec2 texel;
 uniform vec3 center;
 uniform vec3 normal;
+uniform vec3 albedo;
 uniform mat4 projection;
 uniform mat4 view;
 out vec3 v_position;
 out vec3 v_normal;
 out vec2 v_texel;
+out vec3 v_albedo;
 
 /* Requires the input to be normalised.
  * Doesn’t normalise the output. */
@@ -21,8 +23,9 @@ void main()
 {
     vec3 T = normalize(Orthogonal(normal));
     vec3 B = cross(normal, T);
-    v_position = center + 0.3*(texel.x*T + texel.y*B);
+    v_position = center + 0.1*(texel.x*T + texel.y*B);
     v_normal = normal;
     v_texel = texel;
+    v_albedo = albedo;
     gl_Position = projection * view * vec4(v_position, 1.0);
 }

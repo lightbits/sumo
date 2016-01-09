@@ -105,26 +105,25 @@ float SPHERE(vec3 p, float r)
     return m_length(p) - r;
 }
 
-#define UNITE(expr) d1 = expr; if (d1 < d) d = d1
-#define SUBTRACT(expr) d1 = expr; if (-d1 > d) d = -d1;
+#define UNITE(expr, expr_id) d1 = expr; if (d1 < d) { d = d1; *id = expr_id; }
+#define SUBTRACT(expr, expr_id) d1 = expr; if (-d1 > d) { d = -d1; *id = expr_id; }
 
-float MAP(vec3 p)
+float MAP(vec3 p, int *id)
 {
     float d;
     float d1;
-    #if 1
-    #if 1
     d = SPHERE(p, 0.5f);
-    UNITE(SPHERE(p - m_vec3(0.5f, 0.3f, 0.0f), 0.25f));
-    UNITE(p.y + 0.2f);
-    #else
-    d = p.y + 0.2f;
-    SUBTRACT(SPHERE(p, 0.5f));
-    #endif
-    #else
-    d = SPHERE(p, 0.5f);
-    #endif
+    *id = 0;
+    UNITE(SPHERE(p - m_vec3(0.4f, 0.15f, 0.15f), 0.25f), 1);
+    SUBTRACT(SPHERE(p - m_vec3(-0.2f, 0.3f, 0.2f), 0.25f), 0);
+    SUBTRACT(SPHERE(p - m_vec3(0.0f, 0.0f, 0.4f), 0.25f), 0);
     return d;
+}
+
+float MAPN(vec3 p)
+{
+    int id;
+    return MAP(p, &id);
 }
 
 vec3 NORMAL(vec3 p)
@@ -133,26 +132,23 @@ vec3 NORMAL(vec3 p)
     vec3 dy = m_vec3(0.0f, 0.01f, 0.0f);
     vec3 dz = m_vec3(0.0f, 0.0f, 0.01f);
     return m_normalize(m_vec3(
-                       MAP(p + dx) - MAP(p - dx),
-                       MAP(p + dy) - MAP(p - dy),
-                       MAP(p + dz) - MAP(p - dz)));
+                       MAPN(p + dx) - MAPN(p - dx),
+                       MAPN(p + dy) - MAPN(p - dy),
+                       MAPN(p + dz) - MAPN(p - dz)));
 }
 
 void tick(Input io, float elapsed_time, float frame_time)
 {
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
 
-    persist vec3 camera_p = m_vec3(0.1f, 0.8f, 4.0f);
-    persist quat camera_q = m_quat_from_angle_axis(m_vec3(0,1,0), PI);
-    mat4 view = camera_fps(&camera_q, &camera_p, io, frame_time);
-    mat3 camera_frame = m_quat_to_so3(camera_q);
+    mat4 view = mat_translate(0.0f, 0.0f, -2.0f);
+    vec3 ro = m_vec3(0.0f, 0.0f, 2.0f);
+    vec3 forward = m_vec3(0.0f, 0.0f, -1.0f);
+    vec3 up = m_vec3(0.0f, 1.0f, 0.0f);
+    vec3 right = m_vec3(1.0f, 0.0f, 0.0f);
 
     cloud.count = 0;
     {
-        vec3 ro = camera_p;
-        vec3 forward = camera_frame.a3;
-        vec3 up = camera_frame.a2;
-        vec3 right = camera_frame.a1;
         r32 pixel_w = 1.0f / (r32)RES_X;
         r32 pixel_h = 1.0f / (r32)RES_Y;
         for (s32 y = 0; y < RES_Y; y++)
@@ -163,13 +159,14 @@ void tick(Input io, float elapsed_time, float frame_time)
             vec3 rd = m_normalize(forward*1.4f + v*up + u*right);
 
             bool hit = false;
+            int hit_id = 0;
             vec3 p = ro;
             {
                 float t = 0.0f;
                 for (s32 i = 0; i < 32; i++)
                 {
                     p = ro + rd * t;
-                    float d = MAP(p);
+                    float d = MAP(p, &hit_id);
                     if (d < 0.01f)
                     {
                         hit = true;
@@ -183,7 +180,12 @@ void tick(Input io, float elapsed_time, float frame_time)
             {
                 cloud.center[cloud.count] = p;
                 cloud.normal[cloud.count] = NORMAL(p);
-                cloud.albedo[cloud.count] = m_vec3(1.0f, 0.4f, 0.4f);
+                static vec3 albedos[3] = {
+                    m_vec3(1.0f, 0.4f, 0.4f),
+                    m_vec3(0.4f, 1.0f, 0.7f),
+                    m_vec3(1.0f, 0.4f, 0.4f)
+                };
+                cloud.albedo[cloud.count] = albedos[hit_id];
                 cloud.count++;
             }
         }
@@ -207,6 +209,7 @@ void tick(Input io, float elapsed_time, float frame_time)
         {
             uniformf("center", cloud.center[i]);
             uniformf("normal", cloud.normal[i]);
+            uniformf("albedo", cloud.albedo[i]);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
     }
