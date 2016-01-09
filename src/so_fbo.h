@@ -39,6 +39,10 @@ Make render target with single 2D texture target
     glViewport(0, 0, window_width, window_height);
     glBindTexture(GL_TEXTURE_2D, fbo.color[0]);
 
+Multiple color targets
+    Remember to call glDrawBuffers in the render pass using multiple
+    color outputs. https://www.opengl.org/wiki/Fragment_Shader#Output_buffers
+
 */
 
 #ifndef SO_FBO_HEADER_INCLUDE
