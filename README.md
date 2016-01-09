@@ -13,6 +13,10 @@ Demo
 
  ![](./devlog/idxpal.png)
 
+ ![](./devlog/painterly.png)
+
+ ![](./devlog/mystjam.png)
+
 Todo
 ====
  * stb_truetype
