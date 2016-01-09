@@ -98,7 +98,7 @@ float BOX(vec3 p, vec3 b)
 #define UNITE(EXPR, ID) d1 = EXPR; if (d1 < d) { d = d1; id = ID; }
 #define SUBTRACT(EXPR, ID) d1 = EXPR; if (-d1 > d) { d = -d1; id = ID; }
 
-#if 0
+#if 1
 #define STEPS 32
 #define EPSILON 0.01
 float MAP(vec3 p, out int id)
@@ -106,8 +106,11 @@ float MAP(vec3 p, out int id)
     float d1;
     float d = BOX(p, vec3(0.5));
     id = 0;
-    SUBTRACT(SPHERE(p, 0.6 + 0.1*sin(time)), 0);
+    SUBTRACT(SPHERE(p, 0.6 + 0.1*sin(0.01*time)), 0);
     UNITE(SPHERE(p, 0.3), 1);
+    UNITE(SPHERE(p - vec3(1.0, 0.0, 0.0), 0.5), 2);
+    SUBTRACT(SPHERE(p - vec3(0.7, 0.0, 0.5), 0.3), 1);
+    UNITE(SPHERE(p - vec3(-1.0, 0.0, 0.0), 0.5), 0);
     return d;
 }
 
@@ -142,8 +145,7 @@ bool MARCH(vec3 ro, vec3 rd, out vec3 out_p, out int out_id)
     }
     return false;
 }
-#endif
-
+#else
 float Terrain(vec3 p)
 {
     float h = 0.0;
@@ -236,6 +238,7 @@ vec3 SkyColor(vec3 rd)
     // color = mix(color, sky, smoothstep(0.0, 1.0, 0.9*abs(rd.x-0.5)));
     // return color;
 }
+#endif
 
 float random(vec2 co)
 {
@@ -247,15 +250,15 @@ void main()
 {
     vec3 ro = origin;
     vec2 texel = v_texel;
-    texel.x += random(v_texel+vec2(23.33, 18.7)) * 0.1;
-    texel.y += random(v_texel) * 0.1;
+    texel.x += random(v_texel+vec2(23.33, 18.7)) * 0.05;
+    texel.y += random(v_texel) * 0.05;
     vec3 rd = normalize(framez*1.4 + texel.x*aspect*framex + texel.y*framey);
 
     vec3 offset = vec3(0.0);
     vec3 albedo = vec3(1.0);
     vec3 normal = vec3(0.0);
 
-    #if 0
+    #if 1
     vec3 p;
     int id;
     if (MARCH(ro, rd, p, id))
@@ -266,6 +269,8 @@ void main()
             albedo = vec3(1.0, 0.4, 0.4);
         if (id == 1)
             albedo = vec3(1.0, 1.0, 0.8);
+        if (id == 2)
+            albedo = vec3(0.5, 0.7, 1.0);
         out0.w = 1.0;
     }
     else

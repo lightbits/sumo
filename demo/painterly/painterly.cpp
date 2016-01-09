@@ -21,8 +21,8 @@ struct RenderPasses
     RenderPass geometry;
 } pass;
 
-#define RES_X 256
-#define RES_Y 256
+#define RES_X 128
+#define RES_Y 128
 
 struct Framebuffers
 {
@@ -148,7 +148,8 @@ void tick(Input io, float elapsed_time, float frame_time)
 {
     mat4 projection = mat_perspective(PI / 2.5f, WINDOW_WIDTH, WINDOW_HEIGHT, 1.0f, 64.0f);
 
-    mat4 view = mat_translate(2.0f, -2.0f, -2.0f) * mat_rotate_x(0.1f) * mat_rotate_y(+0.2f);
+    mat4 view = mat_translate(0.0f, 0.0f, -2.0f) * mat_rotate_x(0.4f) * mat_rotate_y(-0.2f);
+    // mat4 view = mat_translate(2.0f, -2.0f, -2.0f) * mat_rotate_x(0.1f) * mat_rotate_y(+0.2f);
     vec3 origin;
     mat3 frame;
     decompose_view(view, &frame, &origin);
@@ -183,7 +184,7 @@ void tick(Input io, float elapsed_time, float frame_time)
             GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
             glDrawBuffers(1, draw_buffers);
         }
-        generated = true;
+        generated = false;
     }
 
     begin(&pass.paint);
@@ -200,7 +201,6 @@ void tick(Input io, float elapsed_time, float frame_time)
         glBindTexture(GL_TEXTURE_2D, rts.geometry.color[2]);
         uniformi("sampler2", 2);
 
-        // glClearColor(0, 0, 0, 1);
         glClearColor(0.9, 0.9, 0.9, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
         blend_mode(true);

@@ -14,7 +14,7 @@ float DIFFUSE(vec3 N, vec3 L)
 
 void main()
 {
-    #if 0
+    #if 1
     vec3 N = normalize(v_normal);
     vec3 L1 = normalize(vec3(1.0));
     vec3 L2 = normalize(vec3(-1.0, -1.0, 1.0));
@@ -27,9 +27,9 @@ void main()
 
     f_color.rgb = color;
     float r2 = dot(v_texel, v_texel);
-    // f_color.a = exp(-4.0*r2);
     f_color.a = texture(brush, vec2(0.5) + 0.5 * v_texel).a;
-    f_color.a += exp(-0.8*r2);
+    // f_color.a += exp(-4.0*r2);
+    // f_color.a += exp(-0.8*r2);
     // f_color.a *= exp(-16.0 * r2 * r2);
     // f_color.a = 1.0;
 }
