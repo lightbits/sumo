@@ -185,7 +185,7 @@ void tick(Input io, float t, float dt)
     rotate_y += drotate_y * dt;
     drotate_y *= 0.95f;
 
-    if (io.key.released['z'])
+    if (io_key_released(Z))
     {
         if (rzoom > 1.0f)
             rzoom = 1.0f;
