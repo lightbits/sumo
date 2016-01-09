@@ -12,10 +12,16 @@ Demo
  * idxpal.cpp - 4xSupersampled pixel art tool
 
  ![](./devlog/idxpal.png)
+ * glow.cpp - Random-sampled participating medium lighting
+
+ ![](./devlog/glow.png)
+ * painterly.cpp - Experiment with Dreams-style rendering
 
  ![](./devlog/painterly.png)
+ * mystjam.cpp - Began as a myst jam entry
 
  ![](./devlog/mystjam.png)
+ * obj-load.cpp - Signed distance field fun
 
  ![](./devlog/sdf.png)
 
