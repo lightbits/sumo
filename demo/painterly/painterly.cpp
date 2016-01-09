@@ -12,6 +12,8 @@ struct Buffers
     GLuint quad;
 } buf;
 
+GLuint brush;
+
 struct RenderPasses
 {
     RenderPass paint;
@@ -19,8 +21,8 @@ struct RenderPasses
     RenderPass blend;
 } pass;
 
-#define RES_X 32
-#define RES_Y 32
+#define RES_X 48
+#define RES_Y 48
 #define NUM_POINTS (RES_X*RES_Y)
 struct PointCloud
 {
@@ -43,6 +45,8 @@ void init()
     pass.paint = _load_pass("paint.vs", "paint.fs");
     pass.blit = _load_pass("blit.vs", "blit.fs");
     pass.blend = _load_pass("blend.vs", "blend.fs");
+
+    brush = so_load_tex2d("demo/painterly/brush2.png");
 
     {
         float data[] = {
@@ -105,6 +109,17 @@ float SPHERE(vec3 p, float r)
     return m_length(p) - r;
 }
 
+float BOX(vec3 p, vec3 b)
+{
+    vec3 d = m_vec3(m_abs(p.x) - b.x,
+                    m_abs(p.y) - b.y,
+                    m_abs(p.z) - b.z);
+    vec3 e = m_vec3(m_max(d.x, 0.0f),
+                    m_max(d.y, 0.0f),
+                    m_max(d.z, 0.0f));
+    return m_min(m_max(d.x, m_max(d.y,d.z)),0.0) + m_length(e);
+}
+
 #define UNITE(expr, expr_id) d1 = expr; if (d1 < d) { d = d1; *id = expr_id; }
 #define SUBTRACT(expr, expr_id) d1 = expr; if (-d1 > d) { d = -d1; *id = expr_id; }
 
@@ -112,11 +127,17 @@ float MAP(vec3 p, int *id)
 {
     float d;
     float d1;
-    d = SPHERE(p, 0.5f);
-    *id = 0;
+    #if 1
+    d = BOX(p, m_vec3(0.5f)); *id = 0;
+    SUBTRACT(SPHERE(p, 0.7f), 0);
+    UNITE(SPHERE(p, 0.4f), 1);
+    UNITE(SPHERE(p - m_vec3(0.0f, 0.0f, 0.2f), 0.25f), 2);
+    #else
+    d = SPHERE(p, 0.5f); *id = 0;
     UNITE(SPHERE(p - m_vec3(0.4f, 0.15f, 0.15f), 0.25f), 1);
-    SUBTRACT(SPHERE(p - m_vec3(-0.2f, 0.3f, 0.2f), 0.25f), 0);
-    SUBTRACT(SPHERE(p - m_vec3(0.0f, 0.0f, 0.4f), 0.25f), 0);
+    UNITE(SPHERE(p - m_vec3(-0.4f, 0.15f, 0.15f), 0.25f), 2);
+    SUBTRACT(SPHERE(p - m_vec3(0.0f, -0.2f, 0.4f), 0.25f), 0);
+    #endif
     return d;
 }
 
@@ -137,15 +158,40 @@ vec3 NORMAL(vec3 p)
                        MAPN(p + dz) - MAPN(p - dz)));
 }
 
+void se3_decompose(mat4 se3, mat3 *R, vec3 *p)
+{
+    *R = m_mat3(se3);
+    *p = se3.a4.xyz;
+}
+
+// Decomposes the (world->view) transformation into
+// a rotation matrix and position vector describing
+// the camera rotation and position relative to the
+// world frame.
+void decompose_view(mat4 view, mat3 *R, vec3 *p)
+{
+    mat3 R_c, R_w;
+    vec3 p_c, p_w;
+    se3_decompose(view, &R_c, &p_c);
+    R_w = m_transpose(R_c);
+    p_w = -R_w * p_c;
+    R_w.a1 *= -1.0f;
+    R_w.a3 *= -1.0f;
+    *R = R_w; // Camera frame relative world frame
+    *p = p_w; // Camera position relative world origin
+}
+
 void tick(Input io, float elapsed_time, float frame_time)
 {
     mat4 projection = mat_perspective(PI / 4.0f, WINDOW_WIDTH, WINDOW_HEIGHT, 0.1f, 10.0f);
 
-    mat4 view = mat_translate(0.0f, 0.0f, -2.0f);
-    vec3 ro = m_vec3(0.0f, 0.0f, 2.0f);
-    vec3 forward = m_vec3(0.0f, 0.0f, -1.0f);
-    vec3 up = m_vec3(0.0f, 1.0f, 0.0f);
-    vec3 right = m_vec3(1.0f, 0.0f, 0.0f);
+    mat4 view = mat_translate(0.0f, 0.0f, -2.0f) * mat_rotate_x(0.6f) * mat_rotate_y(-0.2f);
+    vec3 ro;
+    mat3 frame;
+    decompose_view(view, &frame, &ro);
+    vec3 forward = frame.a3;
+    vec3 right = frame.a1;
+    vec3 up = frame.a2;
 
     cloud.count = 0;
     {
@@ -183,7 +229,7 @@ void tick(Input io, float elapsed_time, float frame_time)
                 static vec3 albedos[3] = {
                     m_vec3(1.0f, 0.4f, 0.4f),
                     m_vec3(0.4f, 1.0f, 0.7f),
-                    m_vec3(1.0f, 0.4f, 0.4f)
+                    m_vec3(1.0f, 0.9f, 1.0f)
                 };
                 cloud.albedo[cloud.count] = albedos[hit_id];
                 cloud.count++;
@@ -202,6 +248,10 @@ void tick(Input io, float elapsed_time, float frame_time)
         attribfv("texel", 2, 2, 0);
         uniformf("projection", projection);
         uniformf("view", view);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brush);
+        uniformi("brush", 0);
 
         // todo: draw arrays instanced
         // store center, normal, albedo in VBOs

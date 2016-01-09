@@ -23,7 +23,7 @@ void main()
 {
     vec3 T = normalize(Orthogonal(normal));
     vec3 B = cross(normal, T);
-    v_position = center + 0.1*(texel.x*T + texel.y*B);
+    v_position = center + 0.15*(texel.x*T + texel.y*B);
     v_normal = normal;
     v_texel = texel;
     v_albedo = albedo;
