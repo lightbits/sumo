@@ -48,7 +48,7 @@ struct lines_Vertex { vec2 p; vec4 c; };
 struct lines_Batch
 {
     GLuint vbo;
-    GLuint shader;
+    GLuint program;
     GLuint a_position;
     GLuint a_color;
     GLuint u_scale;
@@ -98,11 +98,11 @@ void lines_init()
     lines_batch.color = m_vec4(1.0f, 1.0f, 1.0f, 1.0f);
     lines_batch.vertex_count = 0;
 
-    lines_batch.shader = so_load_shader_vf_from_memory(SHADER_LINE_BATCH_VS, SHADER_LINE_BATCH_FS);
-    ASSERT(lines_batch.shader != 0);
-    lines_batch.a_position = glGetAttribLocation(lines_batch.shader, "position");
-    lines_batch.a_color    = glGetAttribLocation(lines_batch.shader, "color");
-    lines_batch.u_scale    = glGetUniformLocation(lines_batch.shader, "scale");
+    lines_batch.program = so_load_program_from_memory(SHADER_LINE_BATCH_VS, SHADER_LINE_BATCH_FS);
+    ASSERT(lines_batch.program != 0);
+    lines_batch.a_position = glGetAttribLocation(lines_batch.program, "position");
+    lines_batch.a_color    = glGetAttribLocation(lines_batch.program, "color");
+    lines_batch.u_scale    = glGetUniformLocation(lines_batch.program, "scale");
 }
 
 void lines_draw()
@@ -111,7 +111,7 @@ void lines_draw()
     glBufferSubData(GL_ARRAY_BUFFER, 0,
                     lines_batch.vertex_count * sizeof(lines_Vertex),
                     lines_batch.vertices);
-    glUseProgram(lines_batch.shader);
+    glUseProgram(lines_batch.program);
     glEnableVertexAttribArray(lines_batch.a_position);
     glVertexAttribPointer(lines_batch.a_position, 2, GL_FLOAT,
                           GL_FALSE, sizeof(lines_Vertex),

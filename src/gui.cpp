@@ -27,7 +27,7 @@ static char *SHADER_GUI_FS =
 struct Gui
 {
     GLuint font;
-    GLuint shader;
+    GLuint program;
     GLuint vbo;
     GLint u_projection;
     GLint u_tex;
@@ -53,7 +53,7 @@ static void gui_renderLists(ImDrawList **const cmd_lists, int cmd_lists_count)
     glBindTexture(GL_TEXTURE_2D, gui.font);
     glEnable(GL_SCISSOR_TEST);
 
-    glUseProgram(gui.shader);
+    glUseProgram(gui.program);
     ImGuiIO &io = ImGui::GetIO();
 
     mat4 projection = mat_ortho_depth(0.0f, io.DisplaySize.x, io.DisplaySize.y, 0.0f, 0.0, 1.0f);
@@ -93,14 +93,14 @@ static void gui_renderLists(ImDrawList **const cmd_lists, int cmd_lists_count)
 
 void gui_init(int window_width, int window_height)
 {
-    gui.shader = so_load_shader_vf_from_memory(SHADER_GUI_VS, SHADER_GUI_FS);
-    check(gui.shader != 0, "Failed to load default GUI shader");
+    gui.program = so_load_program_from_memory(SHADER_GUI_VS, SHADER_GUI_FS);
+    check(gui.program != 0, "Failed to load default GUI shader");
 
-    gui.u_projection = glGetUniformLocation(gui.shader, "projection");
-    gui.u_tex        = glGetUniformLocation(gui.shader, "tex");
-    gui.a_position   = glGetAttribLocation(gui.shader, "position");
-    gui.a_texel      = glGetAttribLocation(gui.shader, "texel");
-    gui.a_color      = glGetAttribLocation(gui.shader, "color");
+    gui.u_projection = glGetUniformLocation(gui.program, "projection");
+    gui.u_tex        = glGetUniformLocation(gui.program, "tex");
+    gui.a_position   = glGetAttribLocation(gui.program, "position");
+    gui.a_texel      = glGetAttribLocation(gui.program, "texel");
+    gui.a_color      = glGetAttribLocation(gui.program, "color");
 
     // Preallocate a decently sized vertex buffer to hold GUI vertex data
     glGenBuffers(1, &gui.vbo);

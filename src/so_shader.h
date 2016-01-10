@@ -49,12 +49,86 @@ Load a shader programme
 */
 #ifndef SO_SHADER_HEADER_INCLUDE
 #define SO_SHADER_HEADER_INCLUDE
+#define SO_MAX_SHADERS 6
 
-extern GLuint so_load_shader_vf(char *vs_path, char *fs_path);
-extern GLuint so_load_shader(char **paths, GLenum *types, int count);
-extern GLuint so_load_shader_from_memory(char **srces, GLenum *types, int count);
-extern GLuint so_load_shader_vf_from_memory(char *vs_src, char *fs_src);
-extern void so_free_shader(GLuint shader);
+extern bool so_compile_shader_from_memory(GLuint shader, GLenum type, char *src);
+extern bool so_compile_shader_from_file(GLuint shader, GLenum type, char *path);
+extern bool so_link_program(GLuint program, GLuint *shaders, int count);
+
+// program
+//     The callee should create this using glCreateProgram prior to calling
+//     this function.
+// sources[i]
+//     Either a filename or the raw source code for a shader.
+// types[i]
+//     Must be one of
+//     GL_COMPUTE_SHADER,
+//     GL_VERTEX_SHADER,
+//     GL_TESS_CONTROL_SHADER,
+//     GL_TESS_EVALUATION_SHADER,
+//     GL_GEOMETRY_SHADER, or
+//     GL_FRAGMENT_SHADER
+// is_file[i]
+//     If set to true, sources[i] is treated as a null-terminated filename
+//     to a file containing the shader source. If set to false, sources[i]
+//     is treated as a raw shader source string.
+// count
+//     The number of shaders. Cannot exceed 6 items.
+// Return
+//     false if compilation or linking failed, true if shaders
+//     successfully compiled and the program successfully linked.
+extern bool so_load_program(GLuint program, char **sources, GLenum *types, bool *is_file, int count);
+
+// Notes
+//     This performs the same operations as the previous function, but creates
+//     a program handle internally. The above function is more useful if you
+//     need to do some pre-linking operations to the program, such as
+//     glBindFragDataLocation to specify multiple color outputs.
+//
+//     The returned handle should be freed with glDeleteProgram(.)
+//     once it is no longer needed. Any shaders that are loaded
+//     are however internally detached and freed after the linking
+//     process.
+extern GLuint so_load_program(char **sources, GLenum *types, bool *is_file, int count);
+
+extern bool so_load_program(GLuint program,
+                            char *vertex_shader,
+                            char *fragment_shader,
+                            char *geometry_shader,
+                            char *tess_ctrl_shader,
+                            char *tess_eval_shader,
+                            char *compute_shader,
+                            bool *is_file);
+
+extern bool so_load_program_from_files(GLuint program,
+                                       char *vertex_shader = 0,
+                                       char *fragment_shader = 0,
+                                       char *geometry_shader = 0,
+                                       char *tess_ctrl_shader = 0,
+                                       char *tess_eval_shader = 0,
+                                       char *compute_shader = 0);
+
+extern bool so_load_program_from_files(char *vertex_shader = 0,
+                                       char *fragment_shader = 0,
+                                       char *geometry_shader = 0,
+                                       char *tess_ctrl_shader = 0,
+                                       char *tess_eval_shader = 0,
+                                       char *compute_shader = 0);
+
+extern bool so_load_program_from_memory(GLuint program,
+                                        char *vertex_shader = 0,
+                                        char *fragment_shader = 0,
+                                        char *geometry_shader = 0,
+                                        char *tess_ctrl_shader = 0,
+                                        char *tess_eval_shader = 0,
+                                        char *compute_shader = 0);
+
+extern bool so_load_program_from_memory(char *vertex_shader = 0,
+                                        char *fragment_shader = 0,
+                                        char *geometry_shader = 0,
+                                        char *tess_ctrl_shader = 0,
+                                        char *tess_eval_shader = 0,
+                                        char *compute_shader = 0);
 
 #endif // SO_SHADER_HEADER_INCLUDE
 #ifdef SO_SHADER_IMPLEMENTATION
@@ -63,7 +137,7 @@ extern void so_free_shader(GLuint shader);
 #define SOI_ASSERT(x) assert(x)
 #endif
 
-static bool soi_compile_shader(GLuint shader, GLenum type, char *src)
+bool so_compile_shader_from_memory(GLuint shader, GLenum type, char *src)
 {
     glShaderSource(shader, 1, (const GLchar**)&src, 0);
     glCompileShader(shader);
@@ -92,20 +166,44 @@ static bool soi_compile_shader(GLuint shader, GLenum type, char *src)
     return true;
 }
 
-static GLuint soi_link_program(GLuint *shaders, int count)
+bool so_compile_shader_from_file(GLuint shader, GLenum type, char *path)
 {
-    GLuint program = glCreateProgram();
+    FILE *f = fopen(path, "rb");
+    if (!f)
+    {
+        printf("Could not open file %s\n", path);
+        return false;
+    }
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    rewind(f);
+    char *data = new char[size + 1]; // + 1 for null terminator
+    if (!data)
+    {
+        printf("File too large %s\n", path);
+        fclose(f);
+        return false;
+    }
+    if (!fread(data, 1, size, f))
+    {
+        printf("Could not read file %s\n", path);
+        delete[] data;
+        fclose(f);
+        return false;
+    }
+    data[size] = '\0';
+    fclose(f);
 
-    for (int i = 0; i < count; i++)
-        glAttachShader(program, shaders[i]);
+    bool compile_status = so_compile_shader_from_memory(shader, type, data);
+    delete[] data;
+    return compile_status;
+}
+
+bool so_link_program(GLuint program, GLuint *shaders, int count)
+{
+    SOI_ASSERT(program != 0);
 
     glLinkProgram(program);
-
-    for (int i = 0; i < count; i++)
-    {
-        glDetachShader(program, shaders[i]);
-        glDeleteShader(shaders[i]);
-    }
 
     GLint status;
     glGetProgramiv(program, GL_LINK_STATUS, &status);
@@ -116,78 +214,163 @@ static GLuint soi_link_program(GLuint *shaders, int count)
         glGetProgramInfoLog(program, length, NULL, info);
         printf("Failed to link program: %s\n", info);
         delete[] info;
-        return 0;
+        return false;
     }
 
-    return program;
+    return true;
 }
 
-GLuint so_load_shader(char **paths, GLenum *types, int count)
+bool so_load_program(GLuint program, char **sources, GLenum *types, bool *is_file, int count)
 {
-    char **srces = new char*[count];
-    for (int i = 0; i < count; i++)
-    {
-        FILE *f = fopen(paths[i], "rb");
-        if (!f)
-        {
-            printf("Failed to load shaders: Could not open file %s\n", paths[i]);
-            return 0;
-        }
-        fseek(f, 0, SEEK_END);
-        long size = ftell(f);
-        rewind(f);
-        srces[i] = new char[size + 1];
-        if (!srces[i])
-        {
-            printf("Failed to load shaders: File too large %s\n", paths[i]);
-            return 0;
-        }
-        if (!fread(srces[i], 1, size, f))
-        {
-            printf("Failed to load shaders: Could not read file %s\n", paths[i]);
-            return 0;
-        }
-        srces[i][size] = '\0';
-        fclose(f);
-    }
-    GLuint result = so_load_shader_from_memory(srces, types, count);
-    for (int i = 0; i < count; i++)
-        delete[] srces[i];
-    delete[] srces;
-    return result;
-}
+    SOI_ASSERT(program != 0);
 
-GLuint so_load_shader_from_memory(char **srces, GLenum *types, int count)
-{
-    GLuint shaders[5];
-    SOI_ASSERT(count < 5);
+    GLuint shaders[SO_MAX_SHADERS];
+    SOI_ASSERT(count <= SO_MAX_SHADERS);
     for (int i = 0; i < count; i++)
     {
         shaders[i] = glCreateShader(types[i]);
-        if (!soi_compile_shader(shaders[i], types[i], srces[i]))
-            return 0;
+        bool compile_status;
+        if (is_file[i])
+        {
+            compile_status = so_compile_shader_from_file(shaders[i], types[i], sources[i]);
+        }
+        else
+        {
+            compile_status = so_compile_shader_from_memory(shaders[i], types[i], sources[i]);
+        }
+        if (!compile_status)
+        {
+            for (int j = 0; j <= i; j++)
+                glDeleteShader(shaders[i]);
+            return false;
+        }
     }
-    return soi_link_program(shaders, count);
+
+    for (int i = 0; i < count; i++)
+        glAttachShader(program, shaders[i]);
+
+    if (!so_link_program(program, shaders, count))
+    {
+        for (int i = 0; i < count; i++)
+        {
+            glDetachShader(program, shaders[i]);
+            glDeleteShader(shaders[i]);
+        }
+        return false;
+    }
+
+    for (int i = 0; i < count; i++)
+    {
+        glDetachShader(program, shaders[i]);
+        glDeleteShader(shaders[i]);
+    }
+
+    return true;
 }
 
-GLuint so_load_shader_vf_from_memory(char *vs_src, char *fs_src)
+GLuint so_load_program(char **sources, GLenum *types, bool *is_file, int count)
 {
-    char *srces[] = { vs_src, fs_src };
-    GLenum types[] = { GL_VERTEX_SHADER, GL_FRAGMENT_SHADER };
-    return so_load_shader_from_memory(srces, types, 2);
+    GLuint program = glCreateProgram();
+    if (so_load_program(program, sources, types, is_file, count))
+    {
+        return program;
+    }
+    else
+    {
+        glDeleteProgram(program);
+        return 0;
+    }
 }
 
-void so_free_shader(GLuint shader)
+bool so_load_program(GLuint program,
+                     char *vertex_shader,
+                     char *fragment_shader,
+                     char *geometry_shader,
+                     char *tess_ctrl_shader,
+                     char *tess_eval_shader,
+                     char *compute_shader,
+                     bool *is_file)
 {
-    glUseProgram(0);
-    glDeleteProgram(shader);
+    GLenum types[SO_MAX_SHADERS];
+    char *sources[SO_MAX_SHADERS];
+    int count = 0;
+    if (vertex_shader)
+    {
+        sources[count] = vertex_shader;
+        types[count++] = GL_VERTEX_SHADER;
+    }
+    if (fragment_shader)
+    {
+        sources[count] = fragment_shader;
+        types[count++] = GL_FRAGMENT_SHADER;
+    }
+    if (geometry_shader)
+    {
+        sources[count] = geometry_shader;
+        types[count++] = GL_GEOMETRY_SHADER;
+    }
+    if (tess_ctrl_shader)
+    {
+        sources[count] = tess_ctrl_shader;
+        types[count++] = GL_TESS_CONTROL_SHADER;
+    }
+    if (tess_eval_shader)
+    {
+        sources[count] = tess_eval_shader;
+        types[count++] = GL_TESS_EVALUATION_SHADER;
+    }
+    if (compute_shader)
+    {
+        sources[count] = compute_shader;
+        types[count++] = GL_COMPUTE_SHADER;
+    }
+    return so_load_program(program, sources, types, is_file, count);
 }
 
-GLuint so_load_shader_vf(char *vs_path, char *fs_path)
+bool so_load_program_from_files(GLuint program,
+                                char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
 {
-    char *paths[] = { vs_path, fs_path };
-    GLenum types[] = { GL_VERTEX_SHADER, GL_FRAGMENT_SHADER };
-    return so_load_shader(paths, types, 2);
+    bool is_file[SO_MAX_SHADERS];
+    for (int i = 0; i < SO_MAX_SHADERS; i++)
+        is_file[i] = true;
+    return so_load_program(program, vs, fs, gs, tcs, tes, cs, is_file);
+}
+
+bool so_load_program_from_files(char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
+{
+    GLuint program = glCreateProgram();
+    if (so_load_program_from_files(program, vs, fs, gs, tcs, tes, cs))
+    {
+        glDeleteProgram(program);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool so_load_program_from_memory(GLuint program,
+                                 char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
+{
+    bool is_file[SO_MAX_SHADERS];
+    for (int i = 0; i < SO_MAX_SHADERS; i++)
+        is_file[i] = false;
+    return so_load_program(program, vs, fs, gs, tcs, tes, cs, is_file);
+}
+
+bool so_load_program_from_memory(char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
+{
+    GLuint program = glCreateProgram();
+    if (!so_load_program_from_memory(program, vs, fs, gs, tcs, tes, cs))
+    {
+        glDeleteProgram(program);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 #endif // SO_SHADER_IMPLEMENTATION
