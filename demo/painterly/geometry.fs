@@ -6,9 +6,9 @@ uniform vec3 framez;
 uniform vec3 framey;
 uniform vec3 framex;
 uniform float time;
-layout(location = 0) out vec4 out0;
-layout(location = 1) out vec4 out1;
-layout(location = 2) out vec4 out2;
+out vec4 out0;
+out vec4 out1;
+out vec4 out2;
 
 //
 // Description : Array and textureless GLSL 2D simplex noise function.

@@ -5,6 +5,7 @@
 #define MULTISAMPLES 4
 #define bind_array(buffer) glBindBuffer(GL_ARRAY_BUFFER, buffer)
 #define _load_pass(vs, fs) load_render_pass("demo/painterly/" vs, "demo/painterly/" fs)
+#define __load_pass(p, vs, fs) load_render_pass(p, "demo/painterly/" vs, "demo/painterly/" fs)
 
 struct Buffers
 {
@@ -56,13 +57,20 @@ void decompose_view(mat4 view, mat3 *R, vec3 *p)
     *p = p_w; // Camera position relative world origin
 }
 
+#include <stdio.h>
 bool generated;
 void init()
 {
     pass.paint = _load_pass("paint.vs", "paint.fs");
     pass.blit = _load_pass("blit.vs", "blit.fs");
+    {
+        GLuint program = glCreateProgram();
+        glBindFragDataLocation(program, 0, "out0");
+        glBindFragDataLocation(program, 1, "out1");
+        glBindFragDataLocation(program, 2, "out2");
+        pass.geometry = __load_pass(program, "geometry.vs", "geometry.fs");
+    }
     pass.blend = _load_pass("blend.vs", "blend.fs");
-    pass.geometry = _load_pass("geometry.vs", "geometry.fs");
 
     brush = so_load_tex2d("demo/painterly/brush.png");
 
@@ -78,15 +86,6 @@ void init()
         };
         buf.quad = make_buffer(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
     }
-
-    #if 0
-    {
-        float f = 0.8f;
-        float tn = 2.0f;
-        float dt = 1.0f / 60.0f;
-        printf("%.4f\n", exp(log(1.0f - 0.8f)/(tn/dt)));
-    }
-    #endif
 
     generated = false;
 
@@ -116,6 +115,8 @@ void init()
     glViewport(0, 0, rts.average0.width, rts.average0.height);
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void debug_draw_texture2D(GLuint texture,
@@ -216,10 +217,9 @@ void tick(Input io, float elapsed_time, float frame_time)
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, RES_X*RES_Y);
     }
 
-    blend_mode(false);
-
     begin(&pass.blend);
     {
+        blend_mode(false);
         glBindFramebuffer(GL_FRAMEBUFFER, rts.average1.fbo);
         glViewport(0, 0, rts.average1.width, rts.average1.height);
         glClearColor(0, 0, 0, 0);
