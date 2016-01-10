@@ -25,6 +25,25 @@ RenderPass load_render_pass(char *vertex_shader = 0,
                             char *tess_eval_shader = 0,
                             char *compute_shader = 0);
 
+// Create a render pass from pointers to source code in memory
+RenderPass make_render_pass(GLuint program,
+                            char *vertex_shader = 0,
+                            char *fragment_shader = 0,
+                            char *geometry_shader = 0,
+                            char *tess_ctrl_shader = 0,
+                            char *tess_eval_shader = 0,
+                            char *compute_shader = 0);
+
+// Load a render pass from filenames of shaders on disk
+RenderPass load_render_pass(GLuint program,
+                            char *vertex_shader = 0,
+                            char *fragment_shader = 0,
+                            char *geometry_shader = 0,
+                            char *tess_ctrl_shader = 0,
+                            char *tess_eval_shader = 0,
+                            char *compute_shader = 0);
+
+
 void begin(RenderPass *pass);
 void attribfv(char *name, u32 count, u32 stride, u32 offset, bool normalized = false);
 void attribv(char *name, GLenum type, u32 count, u32 stride, u32 offset, bool normalized = false);
@@ -205,11 +224,12 @@ void attribdiv(char *name, u32 divisor)
     glVertexAttribDivisor(location, divisor);
 }
 
-RenderPass make_render_pass(GLuint program,
-                            char *vs, char *fs,
-                            char *gs, char *tcs,
-                            char *tes, char *cs,
-                            bool from_files)
+static RenderPass
+make_render_pass(GLuint program,
+                 char *vs, char *fs,
+                 char *gs, char *tcs,
+                 char *tes, char *cs,
+                 bool from_files)
 {
     #if 0
     // TODO: Delete previous renderpass

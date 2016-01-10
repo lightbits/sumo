@@ -1,9 +1,13 @@
-/* so_shader - v0.04
+/* so_shader - v0.05
 Simplified OpenGL shader loading and uniform- and attribute
 configuration.
 
 Changelog
 =========
+10. januar 2016
+    Revamped API. Can now pass in user-created program handle.
+    Useful for pre-link phase operations.
+
 24. august 2015
     Fixed file pointer leak
 
