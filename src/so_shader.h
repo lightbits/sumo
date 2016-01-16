@@ -112,12 +112,12 @@ extern bool so_load_program_from_files(GLuint program,
                                        char *tess_eval_shader = 0,
                                        char *compute_shader = 0);
 
-extern bool so_load_program_from_files(char *vertex_shader = 0,
-                                       char *fragment_shader = 0,
-                                       char *geometry_shader = 0,
-                                       char *tess_ctrl_shader = 0,
-                                       char *tess_eval_shader = 0,
-                                       char *compute_shader = 0);
+extern GLuint so_load_program_from_files(char *vertex_shader = 0,
+                                         char *fragment_shader = 0,
+                                         char *geometry_shader = 0,
+                                         char *tess_ctrl_shader = 0,
+                                         char *tess_eval_shader = 0,
+                                         char *compute_shader = 0);
 
 extern bool so_load_program_from_memory(GLuint program,
                                         char *vertex_shader = 0,
@@ -127,12 +127,12 @@ extern bool so_load_program_from_memory(GLuint program,
                                         char *tess_eval_shader = 0,
                                         char *compute_shader = 0);
 
-extern bool so_load_program_from_memory(char *vertex_shader = 0,
-                                        char *fragment_shader = 0,
-                                        char *geometry_shader = 0,
-                                        char *tess_ctrl_shader = 0,
-                                        char *tess_eval_shader = 0,
-                                        char *compute_shader = 0);
+extern GLuint so_load_program_from_memory(char *vertex_shader = 0,
+                                          char *fragment_shader = 0,
+                                          char *geometry_shader = 0,
+                                          char *tess_ctrl_shader = 0,
+                                          char *tess_eval_shader = 0,
+                                          char *compute_shader = 0);
 
 #endif // SO_SHADER_HEADER_INCLUDE
 #ifdef SO_SHADER_IMPLEMENTATION
@@ -340,17 +340,17 @@ bool so_load_program_from_files(GLuint program,
     return so_load_program(program, vs, fs, gs, tcs, tes, cs, is_file);
 }
 
-bool so_load_program_from_files(char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
+GLuint so_load_program_from_files(char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
 {
     GLuint program = glCreateProgram();
     if (so_load_program_from_files(program, vs, fs, gs, tcs, tes, cs))
     {
         glDeleteProgram(program);
-        return false;
+        return 0;
     }
     else
     {
-        return true;
+        return program;
     }
 }
 
@@ -363,17 +363,17 @@ bool so_load_program_from_memory(GLuint program,
     return so_load_program(program, vs, fs, gs, tcs, tes, cs, is_file);
 }
 
-bool so_load_program_from_memory(char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
+GLuint so_load_program_from_memory(char *vs, char *fs, char *gs, char *tcs, char *tes, char *cs)
 {
     GLuint program = glCreateProgram();
     if (!so_load_program_from_memory(program, vs, fs, gs, tcs, tes, cs))
     {
         glDeleteProgram(program);
-        return false;
+        return 0;
     }
     else
     {
-        return true;
+        return program;
     }
 }
 
