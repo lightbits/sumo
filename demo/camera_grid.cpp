@@ -1,3 +1,4 @@
+#define USE_NEW_MATH
 #include "sumo.h"
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -77,6 +78,9 @@ void main()
         f_color.rgb = vec3(0.84, 0.82, 0.75) * (1.0 + 0.1*abs(dir.y));
     }
     f_color.a = 1.0;
+
+    // f_color.rgb *= 0.0001;
+    // f_color.rgb += vec3(sample.x, sample.y, 0.5);
 }
 );
 
@@ -105,20 +109,22 @@ void tick(Input io, float t, float dt)
     //             mat_translate(0.0f, sin(t)*0.2f, camera_height);
 
     persist float camera_x = 0.0f;
-    persist float camera_y = 0.0f;
+    persist float camera_y = 1.3f;
     persist float camera_z = 0.0f;
     persist float camera_phi = 0.0f; // roll
-    persist float camera_theta = 0.0f; // pitch
+    persist float camera_theta = PI / 2.0f; // pitch
     persist float camera_psi = 0.0f; // yaw
 
+    // Some animation
+    #if 0
     focal_distance = 0.5f;
     k1 = 0.1f;
     k2 = 0.05f;
     camera_x = 0.6f*sin(t) + 0.03f*sin(5.4f*t);
     camera_z = 0.6f*cos(t) + 0.03f*cos(5.4f*t);
     camera_y = 1.3f;
-    camera_phi = PI / 2.0f + 0.001f*sin(50.0f*t);
-    camera_psi = PI / 2.0f + 0.001f*cos(40.5f*t);
+    camera_theta = PI / 2.0f;
+    #endif
 
     mat4 view = mat_translate(camera_x, camera_y, camera_z) *
                 mat_rotate_z(camera_phi) *
@@ -127,6 +133,7 @@ void tick(Input io, float t, float dt)
 
     clearc(1.0f, 1.0f, 1.0f, 1.0f);
     begin(&pass);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex);
     glBindBuffer(GL_ARRAY_BUFFER, quad);
     attribfv("position", 2, 2, 0);
@@ -136,7 +143,7 @@ void tick(Input io, float t, float dt)
     uniformf("k1", k1);
     uniformf("k2", k2);
     uniformf("time", t);
-    uniformf("pixel_size", vec2(1.0f / WINDOW_WIDTH, 1.0f / WINDOW_HEIGHT));
+    uniformf("pixel_size", m_vec2(1.0f / WINDOW_WIDTH, 1.0f / WINDOW_HEIGHT));
     uniformi("channel0", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
