@@ -1,19 +1,19 @@
 #include "sumo.h"
 #define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
-#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
+#define WINDOW_HEIGHT 500
 
 void init()
 {
     lines_init();
+    lines_set_scale(WINDOW_HEIGHT / (float)WINDOW_WIDTH, 1.0f);
     lines_set_width(4.0f);
 }
 
 void tick(Input io, float t, float dt)
 {
-    static float A1 = 0.5f;
-    static float A2 = 0.5f;
-    static float A3 = 0.5f;
+    static float A1 = 0.54f;
+    static float A2 = 0.55f;
+    static float A3 = 0.56f;
     static float B1 = 0.5f;
     static float B2 = 0.5f;
     static float B3 = 0.7f;
@@ -22,7 +22,17 @@ void tick(Input io, float t, float dt)
     static float C3 = 0.5f;
     static float D1 = 0.7f;
     static float D2 = 0.8f;
-    static float D3 = 0.8f;
+    static float D3 = 0.88f;
+
+    static float mark_r = 0.5f;
+    static float mark_g = 0.5f;
+    static float mark_b = 0.5f;
+
+    static vec2 mark = m_vec2(0.0f, 0.0f);
+    if (io_key_down(LEFT))
+        mark.x -= dt;
+    if (io_key_down(RIGHT))
+        mark.x += dt;
 
     clearc(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -36,6 +46,9 @@ void tick(Input io, float t, float dt)
         lines_set_color(m_vec4(r, g, b, 1.0f));
         lines_draw_line(x, -1.0f, x, +1.0f);
     }
+
+    lines_set_color(m_vec4(mark_r, mark_g, mark_b, 1.0f));
+    lines_draw_circle(mark.x, mark.y, 0.1f);
 
     lines_flush();
 
@@ -53,6 +66,9 @@ void tick(Input io, float t, float dt)
     ImGui::SliderFloat("D1", &D1, 0.0f, 1.0f);
     ImGui::SliderFloat("D2", &D2, 0.0f, 1.0f);
     ImGui::SliderFloat("D3", &D3, 0.0f, 1.0f);
+    ImGui::SliderFloat("mark_r", &mark_r, 0.0f, 1.0f);
+    ImGui::SliderFloat("mark_g", &mark_g, 0.0f, 1.0f);
+    ImGui::SliderFloat("mark_b", &mark_b, 0.0f, 1.0f);
     ImGui::End();
     ImGui::Render();
 }

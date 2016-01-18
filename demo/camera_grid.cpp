@@ -3,7 +3,6 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define MULTISAMPLES 4
-#define WINDOW_FLAGS SDL_WINDOW_BORDERLESS
 #define GLSL150(src) "#version 150\n" #src
 
 char *VS = GLSL150(
@@ -78,9 +77,6 @@ void main()
         f_color.rgb = vec3(0.84, 0.82, 0.75) * (1.0 + 0.1*abs(dir.y));
     }
     f_color.a = 1.0;
-
-    // f_color.rgb *= 0.0001;
-    // f_color.rgb += vec3(sample.x, sample.y, 0.5);
 }
 );
 
