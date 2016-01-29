@@ -26,7 +26,8 @@ uniform mat4 c_to_w;
 uniform sampler2D channel0;
 
 // Debugging visualizations
-uniform vec3 vis_point;
+uniform vec2 vis_point0;
+uniform vec2 vis_point1;
 uniform vec3 vis_line;
 
 out vec4 f_color;
@@ -70,14 +71,19 @@ void main()
         f_color.rgb = texture(channel0, floor_texel).rgb;
         f_color.rgb *= 1.0 - 0.2*length(quadcoord);
 
-        if (length(plane.xy-vis_point.xy) < 0.1)
+        if (abs(dot(vis_line, vec3(plane.xy, 1.0))) < 0.1)
         {
             f_color.r += 0.5;
         }
 
-        if (abs(dot(vis_line, vec3(plane.xy, 1.0))) < 0.1)
+        if (length(vis_point0-plane.xy) < 0.1)
         {
-            f_color.r += 0.5;
+            f_color.g += 0.5;
+        }
+
+        if (length(vis_point1-plane.xy) < 0.1)
+        {
+            f_color.g += 0.5;
         }
     }
     else
@@ -154,6 +160,14 @@ void test_match_line(vec2 p0, vec2 p1,
     *out_best_match = best_match;
 }
 
+LineEquation line_from_points(vec2 p0, vec2 p1)
+{
+    vec2 n = m_normalize(p1 - p0);
+    n = m_vec2(n.y, -n.x);
+    LineEquation result = { n.x, n.y, -m_dot(n, p0) };
+    return result;
+}
+
 void tick(Input io, float t, float dt)
 {
     persist float focal_distance_mm = 3.67f;
@@ -168,36 +182,52 @@ void tick(Input io, float t, float dt)
 
     float focal_distance = focal_distance_mm * 0.001f;
 
-    vec3 vis_point;
-    vec3 vis_line;
+    persist vec2 vis_point0;
+    persist vec2 vis_point1;
+    persist vec3 vis_line;
     {
+        persist vec2 selected_ndc_0 = m_vec2(-0.6f, 0.0f);
+        persist vec2 selected_ndc_1 = m_vec2(-0.6f, -0.5f);
+        persist vec3 selected_w_0;
+        persist vec3 selected_w_1;
+
         // Our estimate of the rotation matrix
         mat3 R;
         {
-            float n1 = 0.0002f*(-1.0f + 2.0f * frand());
-            float n2 = 0.0002f*(-1.0f + 2.0f * frand());
-            float n3 = 0.0002f*(-1.0f + 2.0f * frand());
+            float n1 = 0.02f*(-1.0f + 2.0f * frand());
+            float n2 = 0.02f*(-1.0f + 2.0f * frand());
+            float n3 = 0.02f*(-1.0f + 2.0f * frand());
             R = m_mat3(mat_rotate_x(camera_theta+n1)*
                        mat_rotate_y(camera_phi+n2)*
                        mat_rotate_z(camera_psi+n3));
         }
 
-        float pc_x = io.mouse.ndc.x * lens_width/2.0f;
-        float pc_y = io.mouse.ndc.y * lens_height/2.0f;
-        float pc_z = -focal_distance;
-        vec3 pc = m_vec3(pc_x, pc_y, pc_z);
+        if (io.mouse.left.down)
+        {
+            vec2 *modify_ndc = &selected_ndc_1;
+            vec3 *modify_w = &selected_w_1;
+            if (m_length(selected_ndc_0-io.mouse.ndc) <
+                m_length(selected_ndc_1-io.mouse.ndc))
+            {
+                modify_ndc = &selected_ndc_0;
+                modify_w = &selected_w_0;
+            }
 
-        // Debug: When we know the camera position exactly
-        // vec3 pw = trace_floor(camera_R, camera_p, pc);
+            float pc_x = io.mouse.ndc.x * lens_width/2.0f;
+            float pc_y = io.mouse.ndc.y * lens_height/2.0f;
+            float pc_z = -focal_distance;
+            vec3 pc = m_vec3(pc_x, pc_y, pc_z);
+            vec3 pw = trace_floor(R, m_vec3(0.0f, 0.0f, camera_p.z), pc);
 
-        // Real world: We only know our height above the ground,
-        // so the result is the relative planar vector to the
-        // image feature projected onto the floor.
-        vec3 pw = trace_floor(R, m_vec3(0.0f, 0.0f, camera_p.z), pc);
-        vis_point = pw;
+            *modify_ndc = io.mouse.ndc;
+            *modify_w = pw;
+        }
+
+        vis_point0 = selected_w_0.xy;
+        vis_point1 = selected_w_1.xy;
 
         LineEquation best_match;
-        test_match_line(&best_match);
+        test_match_line(selected_w_0.xy, selected_w_1.xy, &best_match);
         vis_line = best_match;
     }
 
@@ -220,8 +250,9 @@ void tick(Input io, float t, float dt)
         uniformf("focal_distance", focal_distance);
         uniformf("k1", k1);
         uniformf("k2", k2);
+        uniformf("vis_point0", vis_point0);
+        uniformf("vis_point1", vis_point1);
         uniformf("vis_line", vis_line);
-        uniformf("vis_point", vis_point);
         uniformi("channel0", 0);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -230,7 +261,6 @@ void tick(Input io, float t, float dt)
         ImGui::PushItemWidth(0.4f * ImGui::GetWindowWidth());
         ImGui::SliderFloat("focal_distance [mm]", &focal_distance_mm, 1.0f, 10.0f);
         ImGui::PopItemWidth();
-        ImGui::Text("Hover: %.2f %.2f %.2f", vis_point.x, vis_point.y, vis_point.z);
         ImGui::SliderFloat("x", &camera_p.x, 0.1f, 3.0f);
         ImGui::SliderFloat("y", &camera_p.y, 0.1f, 3.0f);
         ImGui::SliderFloat("z", &camera_p.z, 0.1f, 3.0f);
