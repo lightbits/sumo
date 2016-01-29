@@ -182,22 +182,22 @@ void tick(Input io, float t, float dt)
     {
         ImGui::SliderFloat3("direction0", &direction0.x, -1.0f, 1.0f);
         ImGui::ColorEdit3("color0", &color0.x);
-        ImGui::SliderFloat("exponent0", &exponent0, 1.0f, 32.0f);
+        ImGui::SliderFloat("exponent0", &exponent0, 1.0f, 128.0f);
         ImGui::SliderFloat("strength0", &strength0, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SliderFloat3("direction1", &direction1.x, -1.0f, 1.0f);
         ImGui::ColorEdit3("color1", &color1.x);
-        ImGui::SliderFloat("exponent1", &exponent1, 1.0f, 32.0f);
+        ImGui::SliderFloat("exponent1", &exponent1, 1.0f, 128.0f);
         ImGui::SliderFloat("strength1", &strength1, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SliderFloat3("direction2", &direction2.x, -1.0f, 1.0f);
         ImGui::ColorEdit3("color2", &color2.x);
-        ImGui::SliderFloat("exponent2", &exponent2, 1.0f, 32.0f);
+        ImGui::SliderFloat("exponent2", &exponent2, 1.0f, 128.0f);
         ImGui::SliderFloat("strength2", &strength2, 0.0f, 1.0f);
         ImGui::Separator();
         ImGui::SliderFloat3("direction3", &direction3.x, -1.0f, 1.0f);
         ImGui::ColorEdit3("color3", &color3.x);
-        ImGui::SliderFloat("exponent3", &exponent3, 1.0f, 32.0f);
+        ImGui::SliderFloat("exponent3", &exponent3, 1.0f, 128.0f);
         ImGui::SliderFloat("strength3", &strength3, 0.0f, 1.0f);
     }
     ImGui::Render();
