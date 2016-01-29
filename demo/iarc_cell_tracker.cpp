@@ -22,12 +22,16 @@ uniform float lens_height;
 uniform float focal_distance;
 uniform float k1;
 uniform float k2;
-uniform vec3 hover_point;
 uniform mat4 c_to_w;
 uniform sampler2D channel0;
+
+// Debugging visualizations
+uniform vec3 vis_point;
+uniform vec3 vis_line;
+
 out vec4 f_color;
 
-const float PLANE_SIZE = 2.5;
+const float PLANE_SIZE = 3.2;
 
 bool trace(vec3 ro, vec3 rd, out vec2 p)
 {
@@ -66,7 +70,12 @@ void main()
         f_color.rgb = texture(channel0, floor_texel).rgb;
         f_color.rgb *= 1.0 - 0.2*length(quadcoord);
 
-        if (length(plane.xy-hover_point.xy) < 0.25)
+        if (length(plane.xy-vis_point.xy) < 0.1)
+        {
+            f_color.r += 0.5;
+        }
+
+        if (abs(dot(vis_line, vec3(plane.xy, 1.0))) < 0.1)
         {
             f_color.r += 0.5;
         }
@@ -98,72 +107,144 @@ vec3 trace_floor(mat3 c_to_w, vec3 ro, vec3 pc)
     return ro + rd * t;
 }
 
+typedef vec3 LineEquation;
+
+void test_match_line(vec2 p0, vec2 p1,
+                     LineEquation *out_best_match)
+{
+    LineEquation lines[] = {
+        // verticals
+        { 1.0f, 0.0f, +2.53f },
+        { 1.0f, 0.0f, +1.50f },
+        { 1.0f, 0.0f, +0.50f },
+        { 1.0f, 0.0f, -0.53f },
+        { 1.0f, 0.0f, -1.55f },
+        { 1.0f, 0.0f, -2.58f },
+
+        // horizontals
+        { 0.0f, 1.0f, +2.65f },
+        { 0.0f, 1.0f, +1.60f },
+        { 0.0f, 1.0f, +0.59f },
+        { 0.0f, 1.0f, -0.41f },
+        { 0.0f, 1.0f, -1.45f },
+        { 0.0f, 1.0f, -2.46f }
+    };
+
+    vec2 n = m_normalize(p1 - p0);
+    n = m_vec2(n.y, -n.x);
+
+    int count = array_count(lines);
+    float min_e = 0.0f;
+    int min_i = -1;
+    for (int line_i = 0; line_i < count; line_i++)
+    {
+        LineEquation line = lines[line_i];
+        float e0 = m_abs(m_dot(m_vec3(p0.x, p0.y, 1.0f), line));
+        float e1 = m_abs(m_dot(m_vec3(p1.x, p1.y, 1.0f), line));
+        float e = e0 + e1;
+
+        if (min_i < 0 || e < min_e)
+        {
+            min_e = e;
+            min_i = line_i;
+        }
+    }
+
+    LineEquation best_match = lines[min_i];
+    *out_best_match = best_match;
+}
+
 void tick(Input io, float t, float dt)
 {
-    float aspect = (float)WINDOW_WIDTH / WINDOW_HEIGHT;
     persist float focal_distance_mm = 3.67f;
-    persist float k1 = 0.0f; // 0.1f;
-    persist float k2 = 0.0f; // 0.05f;
-    float lens_width = 4.8f * 0.001f;
-    float lens_height = 3.6f * 0.001f;
-    float focal_distance = focal_distance_mm * 0.001f;
-
+    persist float lens_width = 4.8f * 0.001f;
+    persist float lens_height = 3.6f * 0.001f;
+    persist float k1 = 0.0f; // Default: 0.1f;
+    persist float k2 = 0.0f; // Default: 0.05f;
     persist vec3  camera_p = m_vec3(0.0f, 0.0f, 1.3f);
     persist float camera_phi = 0.0f;
     persist float camera_theta = 0.0f;
     persist float camera_psi = 0.0f;
 
-    mat3 camera_R = m_mat3(mat_rotate_x(camera_theta)*
-                           mat_rotate_y(camera_phi)*
-                           mat_rotate_z(camera_psi));
+    float focal_distance = focal_distance_mm * 0.001f;
 
-    mat4 c_to_w = m_se3(camera_R, camera_p);
-
-    vec3 hover_point;
+    vec3 vis_point;
+    vec3 vis_line;
     {
+        // Our estimate of the rotation matrix
+        mat3 R;
+        {
+            float n1 = 0.0002f*(-1.0f + 2.0f * frand());
+            float n2 = 0.0002f*(-1.0f + 2.0f * frand());
+            float n3 = 0.0002f*(-1.0f + 2.0f * frand());
+            R = m_mat3(mat_rotate_x(camera_theta+n1)*
+                       mat_rotate_y(camera_phi+n2)*
+                       mat_rotate_z(camera_psi+n3));
+        }
+
         float pc_x = io.mouse.ndc.x * lens_width/2.0f;
         float pc_y = io.mouse.ndc.y * lens_height/2.0f;
         float pc_z = -focal_distance;
         vec3 pc = m_vec3(pc_x, pc_y, pc_z);
-        vec3 pw = trace_floor(camera_R, camera_p, pc);
-        hover_point = pw;
+
+        // Debug: When we know the camera position exactly
+        // vec3 pw = trace_floor(camera_R, camera_p, pc);
+
+        // Real world: We only know our height above the ground,
+        // so the result is the relative planar vector to the
+        // image feature projected onto the floor.
+        vec3 pw = trace_floor(R, m_vec3(0.0f, 0.0f, camera_p.z), pc);
+        vis_point = pw;
+
+        LineEquation best_match;
+        test_match_line(&best_match);
+        vis_line = best_match;
     }
 
-    clearc(1.0f, 1.0f, 1.0f, 1.0f);
-    begin(&pass);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glBindBuffer(GL_ARRAY_BUFFER, quad);
-    attribfv("position", 2, 2, 0);
-    uniformf("c_to_w", c_to_w);
-    uniformf("lens_width", lens_width);
-    uniformf("lens_height", lens_height);
-    uniformf("hover_point", hover_point);
-    uniformf("focal_distance", focal_distance);
-    uniformf("k1", k1);
-    uniformf("k2", k2);
-    uniformi("channel0", 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    ImGui::NewFrame();
-    ImGui::Begin("Camera");
-    ImGui::PushItemWidth(0.4f * ImGui::GetWindowWidth());
-    ImGui::SliderFloat("focal_distance [mm]", &focal_distance_mm, 1.0f, 10.0f);
-    ImGui::PopItemWidth();
-    ImGui::Text("%.2f %.2f %.2f", hover_point.x, hover_point.y, hover_point.z);
-    ImGui::SliderFloat("x", &camera_p.x, 0.1f, 3.0f);
-    ImGui::SliderFloat("y", &camera_p.y, 0.1f, 3.0f);
-    ImGui::SliderFloat("z", &camera_p.z, 0.1f, 3.0f);
-    ImGui::SliderAngle("phi", &camera_phi, -180.0f, 180.0f);
-    ImGui::SliderAngle("theta", &camera_theta, -180.0f, 180.0f);
-    ImGui::SliderAngle("psi", &camera_psi, -180.0f, 180.0f);
-    if (ImGui::CollapsingHeader("Brown-Conrady coefficients"))
+    // Render everything
     {
-        ImGui::SliderFloat("k1", &k1, -1.0f, 1.0f);
-        ImGui::SliderFloat("k2", &k2, -1.0f, 1.0f);
+        mat3 camera_R = m_mat3(mat_rotate_x(camera_theta)*
+                               mat_rotate_y(camera_phi)*
+                               mat_rotate_z(camera_psi));
+        mat4 c_to_w = m_se3(camera_R, camera_p);
+
+        clearc(1.0f, 1.0f, 1.0f, 1.0f);
+        begin(&pass);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glBindBuffer(GL_ARRAY_BUFFER, quad);
+        attribfv("position", 2, 2, 0);
+        uniformf("c_to_w", c_to_w);
+        uniformf("lens_width", lens_width);
+        uniformf("lens_height", lens_height);
+        uniformf("focal_distance", focal_distance);
+        uniformf("k1", k1);
+        uniformf("k2", k2);
+        uniformf("vis_line", vis_line);
+        uniformf("vis_point", vis_point);
+        uniformi("channel0", 0);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        ImGui::NewFrame();
+        ImGui::Begin("Camera");
+        ImGui::PushItemWidth(0.4f * ImGui::GetWindowWidth());
+        ImGui::SliderFloat("focal_distance [mm]", &focal_distance_mm, 1.0f, 10.0f);
+        ImGui::PopItemWidth();
+        ImGui::Text("Hover: %.2f %.2f %.2f", vis_point.x, vis_point.y, vis_point.z);
+        ImGui::SliderFloat("x", &camera_p.x, 0.1f, 3.0f);
+        ImGui::SliderFloat("y", &camera_p.y, 0.1f, 3.0f);
+        ImGui::SliderFloat("z", &camera_p.z, 0.1f, 3.0f);
+        ImGui::SliderAngle("phi", &camera_phi, -180.0f, 180.0f);
+        ImGui::SliderAngle("theta", &camera_theta, -180.0f, 180.0f);
+        ImGui::SliderAngle("psi", &camera_psi, -180.0f, 180.0f);
+        if (ImGui::CollapsingHeader("Brown-Conrady coefficients"))
+        {
+            ImGui::SliderFloat("k1", &k1, -1.0f, 1.0f);
+            ImGui::SliderFloat("k2", &k2, -1.0f, 1.0f);
+        }
+        ImGui::End();
+        ImGui::Render();
     }
-    ImGui::End();
-    ImGui::Render();
 }
 
 #include "sumo.cpp"
