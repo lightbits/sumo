@@ -24,6 +24,7 @@ header.
 */
 #ifndef SO_TEXTURE_HEADER_INCLUDE
 #define SO_TEXTURE_HEADER_INCLUDE
+#include "stb_image.h"
 
 extern GLuint
 so_load_tex2d(char *path,

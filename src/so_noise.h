@@ -46,6 +46,15 @@ float noise2f(int x, int y)
     return ( 1.0 - ( (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0f);
 }
 
+// https://www.shadertoy.com/view/MsV3z3
+// float noise_weyl_hash(int x, int y)
+// {
+//     x = 0x3504f333*x*x+y;
+//     y = 0xf1bbcdcb*y*y+c.x;
+//     int r = x*y;
+//     return float(r)*(2.0f/8589934592.0f)+0.5f;
+// }
+
 unsigned int xor128()
 {
     static unsigned int x = 123456789;
