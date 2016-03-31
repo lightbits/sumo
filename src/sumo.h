@@ -221,6 +221,9 @@ struct Input
             r32 y; // The amount scrolled vertically
         } wheel;
     } mouse;
+
+    int window_width;
+    int window_height;
 };
 
 // Example usage:

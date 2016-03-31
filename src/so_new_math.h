@@ -523,6 +523,15 @@ Vector<T, r> operator *(Matrix<T, r, c> m, Vector<T, c> x)
     return result;
 }
 
+mat3 m_outer_product(vec3 a, vec3 b)
+{
+    mat3 result;
+    result.a11 = a.x*b.x; result.a12 = a.x*b.y; result.a13 = a.x*b.z;
+    result.a21 = a.y*b.x; result.a22 = a.y*b.y; result.a23 = a.y*b.z;
+    result.a31 = a.z*b.x; result.a32 = a.z*b.y; result.a33 = a.z*b.z;
+    return result;
+}
+
 // Because I like readable error messages when there is a
 // dimension mismatch in the most common operations.
 vec2 operator *(mat2 m, vec2 b) { return m.a1*b.x + m.a2*b.y; }

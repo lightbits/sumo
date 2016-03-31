@@ -329,6 +329,8 @@ int main(int argc, char **argv)
         input.mouse.ndc.x = -1.0f + 2.0f * input.mouse.pos.x / (float)WINDOW_WIDTH;
         input.mouse.ndc.y = +1.0f - 2.0f * input.mouse.pos.y / (float)WINDOW_HEIGHT;
 
+        SDL_GetWindowSize(window, &input.window_width, &input.window_height);
+
         tick(input, elapsed_time, delta_time);
         gui_tick(delta_time);
         SDL_GL_SwapWindow(window);
