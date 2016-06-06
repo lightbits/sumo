@@ -155,7 +155,7 @@ void tick(Input io, float app_t, float app_dt)
     // -110
     // +19.9
 
-    #if 0
+    #if 1
     persist r32 sim_time = 1.0f;
     int sim_steps = 2000;
     r32 sim_dt = sim_time / sim_steps;

@@ -105,7 +105,7 @@ void init()
 {
     pass = make_render_pass(VS, FS);
     quad = make_quad();
-    tex = so_load_tex2d("C:/Resources/textures/kitchen-tiles.jpg",
+    tex = so_load_tex2d("C:/Temp/colors/arne1.png",
                         0, 0, GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT);
 }
 
