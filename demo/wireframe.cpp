@@ -109,7 +109,7 @@ void init()
         // printf("0x%04x, ", E[mask]);
     }
 
-    #define N 127
+    #define N 65
     static bool S[N*N*N];
     static u08 M[N*N*N];
     static int I[N*N*N];
@@ -209,14 +209,19 @@ void init()
         r32 x = TOWORLD(xi);
         r32 y = TOWORLD(yi);
         r32 z = TOWORLD(zi);
-        vec3 n;
-        {
-            r32 dx = 1.0f/N;
-            n.x = POTENTIAL(x+dx, y, z) - POTENTIAL(x-dx, y, z);
-            n.y = POTENTIAL(x, y+dx, z) - POTENTIAL(x, y-dx, z);
-            n.z = POTENTIAL(x, y, z+dx) - POTENTIAL(x, y, z-dx);
-            n = m_normalize(n);
-        }
+
+        #define NORMAL1X(P) POTENTIAL(P.x+dx, P.y, P.z)-POTENTIAL(P.x-dx, P.y, P.z)
+        #define NORMAL1Y(P) POTENTIAL(P.x, P.y+dx, P.z)-POTENTIAL(P.x, P.y-dx, P.z)
+        #define NORMAL1Z(P) POTENTIAL(P.x, P.y, P.z+dx)-POTENTIAL(P.x, P.y, P.z-dx)
+        #define NORMAL(P) m_normalize(m_vec3(NORMAL1X(P), NORMAL1Y(P), NORMAL1Z(P)))
+        r32 dx = 1.0f / N;
+        vec3 n000 = NORMAL(p000);
+        vec3 n100 = NORMAL(p100);
+        vec3 n010 = NORMAL(p010);
+        vec3 n001 = NORMAL(p001);
+        vec3 n110 = NORMAL(p110);
+        vec3 n101 = NORMAL(p101);
+        vec3 n011 = NORMAL(p011);
 
         #define MASK(X, Y, Z) M[(Z)*N*N+(Y)*N+(X)]
         u08 m000 = MASK(xi, yi, zi);
@@ -229,31 +234,31 @@ void init()
         bool ccw = (m000 & 1) != 0;
 
         #define PUSH_VERT(P, N, U, V) { ptr->p = P; ptr->n = N; ptr->u = U; ptr->v = V; ptr++; num_indices++; }
-        #define EMIT_QUAD(P00, P10, P11, P01) \
-            PUSH_VERT(P00, n, 0.0f, 0.0f); \
-            PUSH_VERT(P10, n, 1.0f, 0.0f); \
-            PUSH_VERT(P11, n, 1.0f, 1.0f); \
-            PUSH_VERT(P11, n, 1.0f, 1.0f); \
-            PUSH_VERT(P01, n, 0.0f, 1.0f); \
-            PUSH_VERT(P00, n, 0.0f, 0.0f);
+        #define EMIT_QUAD(P00, P10, P11, P01, N00, N10, N11, N01) \
+            PUSH_VERT(P00, N00, 0.0f, 0.0f); \
+            PUSH_VERT(P10, N10, 1.0f, 0.0f); \
+            PUSH_VERT(P11, N11, 1.0f, 1.0f); \
+            PUSH_VERT(P11, N11, 1.0f, 1.0f); \
+            PUSH_VERT(P01, N01, 0.0f, 1.0f); \
+            PUSH_VERT(P00, N00, 0.0f, 0.0f);
 
         if (m100 && m001 && m101)
         {
-            if (ccw) { EMIT_QUAD(p000, p001, p101, p100); }
-            else     { EMIT_QUAD(p000, p100, p101, p001); }
+            if (ccw) { EMIT_QUAD(p000, p001, p101, p100, n000, n001, n101, n100); }
+            else     { EMIT_QUAD(p000, p100, p101, p001, n000, n100, n101, n001); }
 
         }
 
         if (m100 && m010 && m110)
         {
-            if (ccw) { EMIT_QUAD(p000, p100, p110, p010); }
-            else     { EMIT_QUAD(p000, p010, p110, p100); }
+            if (ccw) { EMIT_QUAD(p000, p100, p110, p010, n000, n100, n110, n010); }
+            else     { EMIT_QUAD(p000, p010, p110, p100, n000, n010, n110, n100); }
         }
 
         if (m001 && m010 && m011)
         {
-            if (ccw) { EMIT_QUAD(p000, p010, p011, p001); }
-            else     { EMIT_QUAD(p000, p001, p011, p010); }
+            if (ccw) { EMIT_QUAD(p000, p010, p011, p001, n000, n010, n011, n001); }
+            else     { EMIT_QUAD(p000, p001, p011, p010, n000, n001, n011, n010); }
         }
     }
 
