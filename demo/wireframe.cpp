@@ -73,6 +73,15 @@ r32 POTENTIAL(r32 x, r32 y, r32 z)
     return d;
 }
 
+vec3 GRADIENT(vec3 p)
+{
+    r32 d = 0.01f;
+    r32 dx = POTENTIAL(p.x+d, p.y, p.z)-POTENTIAL(p.x-d, p.y, p.z);
+    r32 dy = POTENTIAL(p.x, p.y+d, p.z)-POTENTIAL(p.x, p.y-d, p.z);
+    r32 dz = POTENTIAL(p.x, p.y, p.z+d)-POTENTIAL(p.x, p.y, p.z-d);
+    return m_normalize(m_vec3(dx, dy, dz));
+}
+
 void init()
 {
     rp = make_render_pass(vs, fs);
@@ -206,22 +215,13 @@ void init()
         vec3 p101 = CENTROID(xi-1, yi, zi-1); // left-back
         vec3 p011 = CENTROID(xi, yi-1, zi-1); // back-down
 
-        r32 x = TOWORLD(xi);
-        r32 y = TOWORLD(yi);
-        r32 z = TOWORLD(zi);
-
-        #define NORMAL1X(P) POTENTIAL(P.x+dx, P.y, P.z)-POTENTIAL(P.x-dx, P.y, P.z)
-        #define NORMAL1Y(P) POTENTIAL(P.x, P.y+dx, P.z)-POTENTIAL(P.x, P.y-dx, P.z)
-        #define NORMAL1Z(P) POTENTIAL(P.x, P.y, P.z+dx)-POTENTIAL(P.x, P.y, P.z-dx)
-        #define NORMAL(P) m_normalize(m_vec3(NORMAL1X(P), NORMAL1Y(P), NORMAL1Z(P)))
-        r32 dx = 1.0f / N;
-        vec3 n000 = NORMAL(p000);
-        vec3 n100 = NORMAL(p100);
-        vec3 n010 = NORMAL(p010);
-        vec3 n001 = NORMAL(p001);
-        vec3 n110 = NORMAL(p110);
-        vec3 n101 = NORMAL(p101);
-        vec3 n011 = NORMAL(p011);
+        vec3 n000 = GRADIENT(p000);
+        vec3 n100 = GRADIENT(p100);
+        vec3 n010 = GRADIENT(p010);
+        vec3 n001 = GRADIENT(p001);
+        vec3 n110 = GRADIENT(p110);
+        vec3 n101 = GRADIENT(p101);
+        vec3 n011 = GRADIENT(p011);
 
         #define MASK(X, Y, Z) M[(Z)*N*N+(Y)*N+(X)]
         u08 m000 = MASK(xi, yi, zi);
@@ -246,7 +246,6 @@ void init()
         {
             if (ccw) { EMIT_QUAD(p000, p001, p101, p100, n000, n001, n101, n100); }
             else     { EMIT_QUAD(p000, p100, p101, p001, n000, n100, n101, n001); }
-
         }
 
         if (m100 && m010 && m110)
@@ -272,7 +271,7 @@ void tick(Input io, float t, float dt)
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
     depth_test(true);
-    clear(0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+    clear(1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
     mat4 projection = mat_perspective(PI / 4.0f, io.window_width, io.window_height, 0.1f, 10.0f);
     mat4 view = mat_translate(0.0f, 0.0f, -4.0f) * camera_holdclick(io, dt);
     mat4 model = mat_scale(1.0f);
