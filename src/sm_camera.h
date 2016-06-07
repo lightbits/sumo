@@ -89,7 +89,7 @@ mat4 camera_holdclick(Input io, float dt, float move_speed)
     dtheta = exp(-5.0f * dt) * dtheta;
     dphi = exp(-5.0f * dt) * dphi;
 
-    mat4 rotation = mat_rotate_x(-phi) * mat_rotate_y(theta);
+    mat4 rotation = mat_rotate_x(phi) * mat_rotate_y(theta);
 
     // Use this for the FPS camera!
     // frame * vec3(0, 0, -1) = forward

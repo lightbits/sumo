@@ -8,6 +8,7 @@
 
 char *vs = GLSL(
 in vec3 position;
+in vec3 normal;
 in vec2 coord;
 uniform mat4 projection;
 uniform mat4 view;
@@ -17,7 +18,7 @@ out vec3 vs_normal;
 void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0);
-    vs_normal = position;
+    vs_normal = normal;
     vs_coord = coord;
 }
 );
@@ -33,9 +34,6 @@ float WIREFRAME(float width)
     float t = vs_coord.y;
     float wx = width*fwidth(s);
     float wy = width*fwidth(t);
-    // float h = 1.0 - (smoothstep(0.0, wx, s) - smoothstep(1.0 - wx, 1.0, s));
-    // float v = 1.0 - (smoothstep(0.0, wy, t) - smoothstep(1.0 - wy, 1.0, t));
-    // return clamp(h + v, 0.0, 1.0);
     float hs = (smoothstep(0.0, wx, s)-smoothstep(1.0-wx, 1.0, s));
     float ht = (smoothstep(0.0, wy, t)-smoothstep(1.0-wy, 1.0, t));
     return 1.0-hs*ht;
@@ -70,29 +68,52 @@ u32 num_indices;
 
 r32 POTENTIAL(r32 x, r32 y, r32 z)
 {
-    // return m_min(m_min(m_min(x, y), z),
-    //            sqrt(x*x+y*y+z*z) - 0.3f);
-    // return sqrt(x*x+y*y+z*z) - 0.8f;
-    r32 d1 = y+0.1f*sin(TWO_PI*x)*sin(TWO_PI*z);
-    r32 d2 = sqrt(x*x+y*y+z*z) - 0.5f;
-    return m_min(d1, d2);
+    r32 r = 0.5f+0.4f*sin(TWO_PI*x)*sin(TWO_PI*y)*sin(TWO_PI*z);
+    r32 d = x*x+y*y+z*z-r*r;
+    return d;
 }
 
 void init()
 {
     rp = make_render_pass(vs, fs);
 
-    struct vertex
-    {
-        vec3 p;
-        r32 u;
-        r32 v;
+    u08 E1[12] = { 0, 1, 2, 3, 3, 0, 1, 2, 4, 5, 6, 7 };
+    u08 E2[12] = { 1, 2, 3, 0, 4, 5, 6, 7, 5, 6, 7, 4 };
+    u16 E[256]; // Maps potential-negativity-mask to which edges are intersected
+    vec3 INDEX_TO_VERTEX[8] = {
+        m_vec3(-1, -1, -1),
+        m_vec3(+1, -1, -1),
+        m_vec3(+1, -1, +1),
+        m_vec3(-1, -1, +1),
+        m_vec3(-1, +1, +1),
+        m_vec3(-1, +1, -1),
+        m_vec3(+1, +1, -1),
+        m_vec3(+1, +1, +1)
     };
+    for (u32 mask = 0; mask < 256; mask++)
+    {
+        E[mask] = 0;
+        for (u32 e = 0; e < 12; e++)
+        {
+            u08 e1 = E1[e];
+            u08 e2 = E2[e];
+            #define BIT_IS_SET(I) (mask & (1 << (I)))
+            if ((BIT_IS_SET(e1) && !BIT_IS_SET(e2)) ||
+                (!BIT_IS_SET(e1) && BIT_IS_SET(e2)))
+            {
+                E[mask] |= 1 << e;
+            }
+        }
+        // if (mask % 10 == 0)
+        //     printf("\n");
+        // printf("0x%04x, ", E[mask]);
+    }
 
-    #if 1
-    #define N 65
+    #define N 127
     static bool S[N*N*N];
+    static u08 M[N*N*N];
     static int I[N*N*N];
+    static vec3 C[N*N*N];
     int num_centroids = 0;
     {
         for (int zi = 0; zi < N; zi++)
@@ -108,29 +129,61 @@ void init()
             r32 f212 = EVALI(xi+1, yi, zi+1);
             r32 f222 = EVALI(xi+1, yi+1, zi+1);
             r32 f122 = EVALI(xi, yi+1, zi+1);
+            r32 f[] = {f111, f211, f212, f112, f122, f121, f221, f222};
 
             u08 mask = 0;
             if (f111 < 0.0f) mask |= 1;
             if (f211 < 0.0f) mask |= 2;
-            if (f221 < 0.0f) mask |= 4;
-            if (f121 < 0.0f) mask |= 8;
-            if (f112 < 0.0f) mask |= 16;
-            if (f212 < 0.0f) mask |= 32;
-            if (f222 < 0.0f) mask |= 64;
-            if (f122 < 0.0f) mask |= 128;
+            if (f212 < 0.0f) mask |= 4;
+            if (f112 < 0.0f) mask |= 8;
+            if (f122 < 0.0f) mask |= 16;
+            if (f121 < 0.0f) mask |= 32;
+            if (f221 < 0.0f) mask |= 64;
+            if (f222 < 0.0f) mask |= 128;
 
+            u16 edges = E[mask];
+            vec3 offset = m_vec3(0.0f);
+            int hits = 0;
+            for (u32 e = 0; e < 12; e++)
+            {
+                if ((edges & (1 << e)) == 0)
+                    continue;
+
+                u08 i1 = E1[e];
+                u08 i2 = E2[e];
+                vec3 p1 = INDEX_TO_VERTEX[i1];
+                vec3 p2 = INDEX_TO_VERTEX[i2];
+                r32 f1 = f[i1];
+                r32 f2 = f[i2];
+
+                r32 t = m_clamp(f1 / (f1 - f2), 0.0f, 1.0f);
+                vec3 p = p1 + (p2 - p1) * t;
+                offset += p;
+                hits++;
+            }
+            offset /= (r32)hits;
+
+            int i = zi*N*N+yi*N+xi;
             if (mask != 0 && mask != 0xFF)
             {
-                I[num_centroids++] = zi*N*N+yi*N+xi;
-                S[zi*N*N+yi*N+xi] = true;
+                I[num_centroids++] = i;
+                C[i] = offset;
+                M[i] = mask;
             }
             else
             {
-                S[zi*N*N+yi*N+xi] = false;
+                M[i] = 0;
             }
         }
     }
 
+    struct vertex
+    {
+        vec3 p;
+        vec3 n;
+        r32 u;
+        r32 v;
+    };
     u32 sizeof_data = (num_centroids*3*6)*sizeof(vertex);
     vertex *data = (vertex*)malloc(sizeof_data);
     num_indices = 0;
@@ -142,88 +195,87 @@ void init()
         int yi = (I[i] % (N*N)) / N;
         int zi = (I[i] % (N*N*N)) / (N*N);
 
-        #define NDC(I) (-1.0f + 2.0f*(I+0.5f)/N)
-        #define POSITION(XI, YI, ZI) m_vec3(NDC(XI), NDC(YI), NDC(ZI))
-        vec3 p000 = POSITION(xi, yi, zi);     // center
-        vec3 p100 = POSITION(xi-1, yi, zi);   // left
-        vec3 p010 = POSITION(xi, yi-1, zi);   // down
-        vec3 p001 = POSITION(xi, yi, zi-1);   // back
-        vec3 p110 = POSITION(xi-1, yi-1, zi); // left-down
-        vec3 p101 = POSITION(xi-1, yi, zi-1); // left-back
-        vec3 p011 = POSITION(xi, yi-1, zi-1); // back-down
+        #define OFFSET(XI, YI, ZI) C[(ZI)*N*N+(YI)*N+(XI)]
+        #define TOWORLD(I) (-1.0f + 2.0f*(I)/N)
+        #define CENTROID(XI, YI, ZI) (m_vec3(TOWORLD(XI), TOWORLD(YI), TOWORLD(ZI)) + OFFSET(XI, YI, ZI)*(1.0f/N))
+        vec3 p000 = CENTROID(xi, yi, zi);     // center
+        vec3 p100 = CENTROID(xi-1, yi, zi);   // left
+        vec3 p010 = CENTROID(xi, yi-1, zi);   // down
+        vec3 p001 = CENTROID(xi, yi, zi-1);   // back
+        vec3 p110 = CENTROID(xi-1, yi-1, zi); // left-down
+        vec3 p101 = CENTROID(xi-1, yi, zi-1); // left-back
+        vec3 p011 = CENTROID(xi, yi-1, zi-1); // back-down
 
-        #define IS_SURFACE(X, Y, Z) S[(Z)*N*N+(Y)*N+(X)]
-        bool s100 = IS_SURFACE(xi-1, yi, zi);
-        bool s010 = IS_SURFACE(xi, yi-1, zi);
-        bool s001 = IS_SURFACE(xi, yi, zi-1);
-        bool s110 = IS_SURFACE(xi-1, yi-1, zi);
-        bool s101 = IS_SURFACE(xi-1, yi, zi-1);
-        bool s011 = IS_SURFACE(xi, yi-1, zi-1);
-
-        #define PUSH_VERT(P, U, V) { ptr->p = P; ptr->u = U; ptr->v = V; ptr++; num_indices++; }
-        #define EMIT_QUAD(P00, P10, P11, P01) { \
-            PUSH_VERT(P00, 0.0f, 0.0f); \
-            PUSH_VERT(P10, 1.0f, 0.0f); \
-            PUSH_VERT(P11, 1.0f, 1.0f); \
-            PUSH_VERT(P11, 1.0f, 1.0f); \
-            PUSH_VERT(P01, 0.0f, 1.0f); \
-            PUSH_VERT(P00, 0.0f, 0.0f); }
-
-        if (s100 && s001 && s101)
+        r32 x = TOWORLD(xi);
+        r32 y = TOWORLD(yi);
+        r32 z = TOWORLD(zi);
+        vec3 n;
         {
-            EMIT_QUAD(p000, p100, p101, p001);
+            r32 dx = 1.0f/N;
+            n.x = POTENTIAL(x+dx, y, z) - POTENTIAL(x-dx, y, z);
+            n.y = POTENTIAL(x, y+dx, z) - POTENTIAL(x, y-dx, z);
+            n.z = POTENTIAL(x, y, z+dx) - POTENTIAL(x, y, z-dx);
+            n = m_normalize(n);
         }
 
-        if (s100 && s010 && s110)
+        #define MASK(X, Y, Z) M[(Z)*N*N+(Y)*N+(X)]
+        u08 m000 = MASK(xi, yi, zi);
+        u08 m100 = MASK(xi-1, yi, zi);
+        u08 m010 = MASK(xi, yi-1, zi);
+        u08 m001 = MASK(xi, yi, zi-1);
+        u08 m110 = MASK(xi-1, yi-1, zi);
+        u08 m101 = MASK(xi-1, yi, zi-1);
+        u08 m011 = MASK(xi, yi-1, zi-1);
+        bool ccw = (m000 & 1) != 0;
+
+        #define PUSH_VERT(P, N, U, V) { ptr->p = P; ptr->n = N; ptr->u = U; ptr->v = V; ptr++; num_indices++; }
+        #define EMIT_QUAD(P00, P10, P11, P01) \
+            PUSH_VERT(P00, n, 0.0f, 0.0f); \
+            PUSH_VERT(P10, n, 1.0f, 0.0f); \
+            PUSH_VERT(P11, n, 1.0f, 1.0f); \
+            PUSH_VERT(P11, n, 1.0f, 1.0f); \
+            PUSH_VERT(P01, n, 0.0f, 1.0f); \
+            PUSH_VERT(P00, n, 0.0f, 0.0f);
+
+        if (m100 && m001 && m101)
         {
-            EMIT_QUAD(p000, p100, p110, p010);
+            if (ccw) { EMIT_QUAD(p000, p001, p101, p100); }
+            else     { EMIT_QUAD(p000, p100, p101, p001); }
+
         }
 
-        if (s001 && s010 && s011)
+        if (m100 && m010 && m110)
         {
-            EMIT_QUAD(p000, p001, p011, p010);
+            if (ccw) { EMIT_QUAD(p000, p100, p110, p010); }
+            else     { EMIT_QUAD(p000, p010, p110, p100); }
+        }
+
+        if (m001 && m010 && m011)
+        {
+            if (ccw) { EMIT_QUAD(p000, p010, p011, p001); }
+            else     { EMIT_QUAD(p000, p001, p011, p010); }
         }
     }
 
     buf = make_buffer(GL_ARRAY_BUFFER, num_indices*sizeof(vertex), data, GL_STATIC_DRAW);
-
-    #else
-    #define N 16
-    #define NUM_VERTICES (N*N*6)
-    vertex data[NUM_VERTICES];
-    vertex *ptr = data;
-    for (int y = 0; y < N; y++)
-    for (int x = 0; x < N; x++)
-    {
-        vec3 p11 = m_normalize(m_vec3(-1.0f + 2.0f*x/N, -1.0f + 2.0f*y/N, 1.0f));
-        vec3 p12 = m_normalize(m_vec3(-1.0f + 2.0f*(x+1)/N, -1.0f + 2.0f*y/N, 1.0f));
-        vec3 p21 = m_normalize(m_vec3(-1.0f + 2.0f*x/N, -1.0f + 2.0f*(y+1)/N, 1.0f));
-        vec3 p22 = m_normalize(m_vec3(-1.0f + 2.0f*(x+1)/N, -1.0f + 2.0f*(y+1)/N, 1.0f));
-
-        #define PUSH1(P, U, V) { vertex v = {P, U, V}; *ptr = v; ptr++; }
-        PUSH1(p11, 0.0f, 0.0f);
-        PUSH1(p12, 1.0f, 0.0f);
-        PUSH1(p22, 1.0f, 1.0f);
-        PUSH1(p22, 1.0f, 1.0f);
-        PUSH1(p21, 0.0f, 1.0f);
-        PUSH1(p11, 0.0f, 0.0f);
-    }
-    buf = make_buffer(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-    #endif
 }
 
 void tick(Input io, float t, float dt)
 {
     glViewport(0, 0, io.window_width, io.window_height);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
     depth_test(true);
-    clear(0.35f, 0.55f, 1.0f, 1.0f, 1.0f);
+    clear(0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
     mat4 projection = mat_perspective(PI / 4.0f, io.window_width, io.window_height, 0.1f, 10.0f);
     mat4 view = mat_translate(0.0f, 0.0f, -4.0f) * camera_holdclick(io, dt);
     mat4 model = mat_scale(1.0f);
     begin(&rp);
     glBindBuffer(GL_ARRAY_BUFFER, buf);
-    attribfv("position", 3, 5, 0);
-    attribfv("coord", 2, 5, 3);
+    attribfv("position", 3, 8, 0);
+    attribfv("normal", 3, 8, 3);
+    attribfv("coord", 2, 8, 6);
     uniformf("projection", projection);
     uniformf("view", view);
     uniformf("model", model);
