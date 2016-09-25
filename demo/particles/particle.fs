@@ -48,6 +48,7 @@ void main()
     {
         f_color.rgb = mix(f_color.rgb * sky_bounce, f_color.rgb, shadow);
     }
+    f_color.rgb = sqrt(f_color.rgb);
 
     // Compute impostor frag depth and store as ndc for depth testing
     float ndc_depth = (projection[2].z * view_position.z + projection[3].z) / (-view_position.z);
